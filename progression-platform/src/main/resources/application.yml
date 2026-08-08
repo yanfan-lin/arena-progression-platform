@@ -1,9 +1,12 @@
+# 8081 is the local default
 server:
   port: ${PROGRESSION_SERVER_PORT:8081}
 
 spring:
   application:
     name: progression-platform
+  # Values can be overridden so the same app runs against Docker compose
+  # and Testcontainers in tests
   datasource:
     url: ${MYSQL_URL:jdbc:mysql://localhost:3306/arena}
     username: ${MYSQL_USER:arena}

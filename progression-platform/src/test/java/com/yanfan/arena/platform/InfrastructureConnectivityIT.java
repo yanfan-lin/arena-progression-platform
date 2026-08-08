@@ -30,6 +30,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 class InfrastructureConnectivityIT {
 
+    // Testcontainers starts throwaway MySQL/Kafka/Redis containers for this test;
+    // nothing here touches the locally running Compose stack.
     @Container
     static final MySQLContainer<?> MYSQL = new MySQLContainer<>(DockerImageName.parse("mysql:8.4.11"))
             .withDatabaseName("arena")
@@ -43,6 +45,8 @@ class InfrastructureConnectivityIT {
     static final GenericContainer<?> REDIS = new GenericContainer<>(DockerImageName.parse("redis:7.4.10"))
             .withExposedPorts(6379);
 
+    // the app's connection settings at the throwaway containers instead of
+    // the values in application.yml.
     @DynamicPropertySource
     static void overrideProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", MYSQL::getJdbcUrl);

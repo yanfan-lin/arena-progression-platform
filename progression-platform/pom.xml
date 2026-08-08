@@ -10,6 +10,11 @@
     <artifactId>progression-platform</artifactId>
     <name>progression-platform</name>
     <description>Event-driven arena progression backend</description>
+
+    <!-- Runtime starters: REST API (web), JPA/MySQL persistence, Kafka
+     messaging, and Redis caching. Test scope adds Spring Boot
+     test support and Testcontainers for real MySQL/Kafka/Redis in
+     integration tests. -->
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>

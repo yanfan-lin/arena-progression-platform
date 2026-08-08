@@ -11,6 +11,9 @@
     <groupId>com.yanfan.arena</groupId>
     <artifactId>arena-progression-platform</artifactId>
     <version>0.0.1-SNAPSHOT</version>
+
+    <!-- No application code lives here. It centralizes
+         Java version, encoding, and the test lifecycle for all three modules. -->
     <packaging>pom</packaging>
     <modules>
         <module>arena-contract</module>
@@ -18,6 +21,7 @@
         <module>arena-simulator</module>
     </modules>
 
+    <!-- UTF-8 keeps output consistent -->
     <properties>
         <java.version>25</java.version>
         <maven.compiler.release>25</maven.compiler.release>

@@ -1,6 +1,8 @@
 name: arena-progression-platform
 
 services:
+  # Credentials come from the ignored .env file (see .env.example)
+  # The healthcheck waits until the arena user can authenticate
   mysql:
     image: mysql:8.4.11
     container_name: arena-mysql
@@ -17,6 +19,9 @@ services:
       retries: 10
       start_period: 30s
 
+  # PLAINTEXT (9092) is for host apps
+  # INTERNAL (29092) is for other containers like Kafbat
+  # Replication factors are 1 because this is a single-broker local setup
   kafka:
     image: apache/kafka:4.3.1
     container_name: arena-kafka
@@ -59,6 +64,7 @@ services:
       timeout: 5s
       retries: 10
 
+  # Optional inspection UIs - start with: docker compose --profile tools up -d
   kafbat-ui:
     image: ghcr.io/kafbat/kafka-ui:v1.5.0
     container_name: arena-kafbat
@@ -73,6 +79,7 @@ services:
       kafka:
         condition: service_healthy
 
+  # Optional inspection UIs - start with: docker compose --profile tools up -d
   redis-insight:
     image: redis/redisinsight:3.8.0
     container_name: arena-redis-insight
