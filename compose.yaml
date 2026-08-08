@@ -27,9 +27,9 @@ services:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
-      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,INTERNAL://:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,INTERNAL:PLAINTEXT
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
@@ -58,6 +58,33 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+
+  kafbat-ui:
+    image: ghcr.io/kafbat/kafka-ui:v1.0.0
+    container_name: arena-kafbat
+    profiles: [ "tools" ]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  redis-insight:
+    image: redis/redisinsight:3.8.0
+    container_name: arena-redis-insight
+    profiles: [ "tools" ]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5540:5540"
+    environment:
+      RI_ACCEPT_TERMS_AND_CONDITIONS: "yes"
+    depends_on:
+      redis:
+        condition: service_healthy
 
 volumes:
   mysql_data:
