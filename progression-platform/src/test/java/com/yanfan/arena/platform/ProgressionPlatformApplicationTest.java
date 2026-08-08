@@ -1,10 +1,10 @@
-package com.yanfan.arena.simulator;
+package com.yanfan.arena.platform;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class ArenaSimulatorApplicationTests {
+class ProgressionPlatformApplicationTest {
 
     @Test
     void contextLoads() {
