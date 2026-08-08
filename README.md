@@ -11,3 +11,4 @@ An event-driven multiplayer game backend for player XP, team Elo ratings, reliab
 ## Status
 
 Milestone 1: multi-module scaffold complete. Implementation follows the project handoff.
+Milestone 2: local infrastructure and configuration implemented

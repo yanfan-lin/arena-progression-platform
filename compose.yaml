@@ -60,7 +60,7 @@ services:
       retries: 10
 
   kafbat-ui:
-    image: ghcr.io/kafbat/kafka-ui:v1.0.0
+    image: ghcr.io/kafbat/kafka-ui:v1.5.0
     container_name: arena-kafbat
     profiles: [ "tools" ]
     restart: unless-stopped
