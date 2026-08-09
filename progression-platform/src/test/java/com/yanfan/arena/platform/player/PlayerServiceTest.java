@@ -8,6 +8,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,6 +23,9 @@ class PlayerServiceTest {
 
     @Mock
     PlayerRepository playerRepository;
+
+    @Mock
+    Clock clock;
 
     @InjectMocks
     PlayerService playerService;
@@ -84,6 +89,45 @@ class PlayerServiceTest {
         assertThatThrownBy(() -> playerService.get(99L))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
+
+    @Test
+    void retireMarksPlayerAsRetired() {
+
+        Player player = new Player();
+        player.setDisplayName("ArenaExamplePlayer");
+
+        when(playerRepository.findById(1L))
+                .thenReturn(Optional.of(player));
+
+        when(clock.instant())
+                .thenReturn(Instant.parse("2026-08-09T00:00:00Z"));
+
+        when(playerRepository.save(any(Player.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        PlayerResponse response = playerService.retire(1L);
+
+        assertThat(response.status()).isEqualTo(PlayerStatus.RETIRED);
+        assertThat(player.getRetiredAt()).isEqualTo(Instant.parse("2026-08-09T00:00:00Z"));
+    }
+
+    @Test
+    void retireRejectsAlreadyRetiredPlayer() {
+
+        Player player = new Player();
+        player.setDisplayName("ArenaExamplePlayer");
+
+        player.retire(Instant.parse("2026-08-09T00:00:00Z"));
+
+        when(playerRepository.findById(1L))
+                .thenReturn(Optional.of(player));
+
+        assertThatThrownBy(() -> playerService.retire(1L))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("already retired");
+
+    }
+
 
 
 }

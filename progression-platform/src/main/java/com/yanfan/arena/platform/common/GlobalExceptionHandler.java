@@ -1,11 +1,6 @@
 package com.yanfan.arena.platform.common;
 
 import jakarta.servlet.http.HttpServletRequest;
-
-import java.time.Instant;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +8,10 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 // Converts every exception into one consistent error response
 @RestControllerAdvice

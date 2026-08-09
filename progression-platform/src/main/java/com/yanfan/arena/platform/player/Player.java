@@ -47,6 +47,12 @@ public class Player {
         this.updatedAt = Instant.now();
     }
 
+    // Mark the player as permanently retired
+    public void retire(Instant retiredAt) {
+        this.status = PlayerStatus.RETIRED;
+        this.retiredAt = retiredAt;
+    }
+
     public Long getPlayerId() {
         return playerId;
     }

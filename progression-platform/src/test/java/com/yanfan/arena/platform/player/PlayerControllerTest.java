@@ -26,7 +26,6 @@ class PlayerControllerTest {
 
     @Test
     void createReturns201WithLocation() throws Exception {
-
         PlayerResponse response = new PlayerResponse(
                 1L,
                 "ArenaExamplePlayer",
@@ -96,6 +95,35 @@ class PlayerControllerTest {
                 .thenThrow(new ResourceNotFoundException("PLAYER_NOT_FOUND", "Player not found"));
 
         mockMvc.perform(get("/api/v1/players/99"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("PLAYER_NOT_FOUND"));
+    }
+
+    @Test
+    void retireReturns200() throws Exception {
+        when(playerService.retire(1L))
+                .thenReturn(new PlayerResponse(
+                                1L,
+                                "ArenaExamplePlayer",
+                                PlayerStatus.RETIRED,
+                                0,
+                                1,
+                                java.time.Instant.now(),
+                                java.time.Instant.now()
+                        )
+                );
+
+        mockMvc.perform(post("/api/v1/players/1/retire"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("RETIRED"));
+    }
+
+    @Test
+    void retireReturns404ForUnknownPlayer() throws Exception {
+        when(playerService.retire(99L))
+                .thenThrow(new ResourceNotFoundException("PLAYER_NOT_FOUND", "Player not found"));
+
+        mockMvc.perform(post("/api/v1/players/99/retire"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("PLAYER_NOT_FOUND"));
     }
