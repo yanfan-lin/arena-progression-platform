@@ -1,21 +1,22 @@
 package com.yanfan.arena.platform.common;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ProblemDetail;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.ServletWebRequest;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-// Converts every exception into one consistent error response
+// Provides consistent handling for application and Spring MVC errors
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ProblemDetail handleNotFound(ResourceNotFoundException ex,
@@ -38,9 +39,12 @@ public class GlobalExceptionHandler {
 
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ProblemDetail> handleValidation(MethodArgumentNotValidException ex,
-                                                          HttpServletRequest request) {
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request) {
         ProblemDetail problem = toProblem(
                 HttpStatus.BAD_REQUEST,
                 "VALIDATION_FAILED",
@@ -58,15 +62,17 @@ public class GlobalExceptionHandler {
 
     }
 
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ProblemDetail handleMalformedJson(HttpMessageNotReadableException ex,
-                                             HttpServletRequest request) {
-        return toProblem(
+    @Override
+    protected ResponseEntity<Object> handleHttpMessageNotReadable(
+            HttpMessageNotReadableException ex,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request) {
+        return ResponseEntity.badRequest().body(toProblem(
                 HttpStatus.BAD_REQUEST,
                 "MALFORMED_JSON",
                 "Request body is not valid JSON",
-                request);
-
+                request));
     }
 
     @ExceptionHandler(Exception.class)
@@ -95,5 +101,15 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
-
+    private ProblemDetail toProblem(HttpStatus status,
+                                    String code,
+                                    String detail,
+                                    WebRequest request) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
+        problem.setTitle(status.getReasonPhrase());
+        problem.setProperty("code", code);
+        problem.setProperty("path", ((ServletWebRequest) request).getRequest().getRequestURI());
+        problem.setProperty("timestamp", Instant.now().toString());
+        return problem;
+    }
 }

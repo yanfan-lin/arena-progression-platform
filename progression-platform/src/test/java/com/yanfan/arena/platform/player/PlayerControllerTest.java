@@ -128,5 +128,17 @@ class PlayerControllerTest {
                 .andExpect(jsonPath("$.code").value("PLAYER_NOT_FOUND"));
     }
 
+    @Test
+    void getReturns400ForNonNumericPlayerId() throws Exception {
+        mockMvc.perform(get("/api/v1/players/abc"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void unknownRouteReturns404() throws Exception {
+        mockMvc.perform(get("/api/v1/unknown"))
+                .andExpect(status().isNotFound());
+    }
+
 
 }
