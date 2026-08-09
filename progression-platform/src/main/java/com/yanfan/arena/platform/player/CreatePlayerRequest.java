@@ -15,7 +15,8 @@ public class CreatePlayerRequest {
     }
 
     public void setDisplayName(String displayName) {
-        this.displayName = displayName;
+        // Normalize before Bean validation runs, so @Size checks the value correctly
+        this.displayName = displayName == null ? null : displayName.trim();
     }
 
 }

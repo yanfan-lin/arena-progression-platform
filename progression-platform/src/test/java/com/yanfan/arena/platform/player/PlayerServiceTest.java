@@ -7,6 +7,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -34,7 +35,7 @@ class PlayerServiceTest {
     void createTrimsDisplayNameAndSaves() {
         when(playerRepository.existsByDisplayNameIgnoreCase("ArenaExamplePlayer")).thenReturn(false);
 
-        when(playerRepository.save(any(Player.class)))
+        when(playerRepository.saveAndFlush(any(Player.class)))
                 .thenAnswer(invocation ->
                         {
                             Player player = invocation.getArgument(0);
@@ -52,7 +53,7 @@ class PlayerServiceTest {
         assertThat(response.displayName()).isEqualTo("ArenaExamplePlayer");
         assertThat(response.status()).isEqualTo(PlayerStatus.ACTIVE);
 
-        verify(playerRepository).save(any(Player.class));
+        verify(playerRepository).saveAndFlush(any(Player.class));
     }
 
     @Test
@@ -102,7 +103,7 @@ class PlayerServiceTest {
         when(clock.instant())
                 .thenReturn(Instant.parse("2026-08-09T00:00:00Z"));
 
-        when(playerRepository.save(any(Player.class)))
+        when(playerRepository.saveAndFlush(any(Player.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         PlayerResponse response = playerService.retire(1L);
@@ -128,6 +129,21 @@ class PlayerServiceTest {
 
     }
 
+    @Test
+    void createTranslatesDatabaseDuplicateToConflict() {
+        when(playerRepository.existsByDisplayNameIgnoreCase("ArenaExamplePlayer"))
+                .thenReturn(false);
+
+        when(playerRepository.saveAndFlush(any(Player.class)))
+                .thenThrow(new DataIntegrityViolationException("duplicate key"));
+
+        CreatePlayerRequest request = new CreatePlayerRequest();
+        request.setDisplayName("ArenaExamplePlayer");
+
+        assertThatThrownBy(() -> playerService.create(request))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("already exists");
+    }
 
 
 }

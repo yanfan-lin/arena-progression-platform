@@ -5,6 +5,7 @@ import com.yanfan.arena.platform.common.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.Clock;
 
@@ -27,16 +28,27 @@ public class PlayerService {
     public PlayerResponse create(CreatePlayerRequest request) {
         String displayName = request.getDisplayName().trim();
 
-        // Database enforces case-insensitive uniqueness
+        // If the name already exists, stop and return 409
         if (playerRepository.existsByDisplayNameIgnoreCase(displayName)) {
             throw new ConflictException("PLAYER_NAME_TAKEN",
-                    "Display name already exists");
+                    "A player with this display name already exists");
         }
 
         Player player = new Player();
         player.setDisplayName(displayName);
 
-        return PlayerResponse.from(playerRepository.save(player));
+        try {
+
+            // Save the player now: If two requests use the same name at the same time,
+            // the database rejects the second one
+            return PlayerResponse.from(playerRepository.saveAndFlush(player));
+        } catch (DataIntegrityViolationException e) {
+
+            // Return 409 if the name was already saved by another request
+            throw new ConflictException("PLAYER_NAME_TAKEN",
+                    "A player with this display name already exists");
+        }
+
     }
 
     public PlayerResponse get(Long playerId) {
@@ -61,7 +73,9 @@ public class PlayerService {
         // and this check is added in the team lifecycle operations
         player.retire(clock.instant());
 
-        return PlayerResponse.from(playerRepository.save(player));
+        // Flush before building the response,
+        // so that @PreUpdate refreshes updatedAt
+        return PlayerResponse.from(playerRepository.saveAndFlush(player));
     }
 
 
