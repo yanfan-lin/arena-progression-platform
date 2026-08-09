@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 
 import java.time.Instant;
 
+// Represents a player account and its progression state
 @Entity
 @Table(name = "players")
 public class Player {

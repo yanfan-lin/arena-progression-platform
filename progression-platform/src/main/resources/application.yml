@@ -10,10 +10,6 @@ spring:
     hibernate:
       ddl-auto: validate
 
-  mvc:
-    problemdetails:
-      enabled: true
-
   application:
     name: progression-platform
   # Values can be overridden so the same app runs against Docker compose
