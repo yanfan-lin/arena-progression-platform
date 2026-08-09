@@ -66,6 +66,7 @@ class PlayerPersistenceIT {
     void displayNameIsUniqueCaseInsensitively() {
         Player first = new Player();
         first.setDisplayName("DummyPlayer");
+
         playerRepository.saveAndFlush(first);
 
         Player second = new Player();

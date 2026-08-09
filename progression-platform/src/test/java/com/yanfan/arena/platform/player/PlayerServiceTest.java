@@ -1,0 +1,89 @@
+package com.yanfan.arena.platform.player;
+
+import com.yanfan.arena.platform.common.ConflictException;
+import com.yanfan.arena.platform.common.ResourceNotFoundException;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class PlayerServiceTest {
+
+    @Mock
+    PlayerRepository playerRepository;
+
+    @InjectMocks
+    PlayerService playerService;
+
+    @Test
+    void createTrimsDisplayNameAndSaves() {
+        when(playerRepository.existsByDisplayNameIgnoreCase("ArenaExamplePlayer")).thenReturn(false);
+
+        when(playerRepository.save(any(Player.class)))
+                .thenAnswer(invocation ->
+                        {
+                            Player player = invocation.getArgument(0);
+                            player.setStatus(PlayerStatus.ACTIVE);
+
+                            return player;
+                        }
+                );
+
+        CreatePlayerRequest request = new CreatePlayerRequest();
+        request.setDisplayName("   ArenaExamplePlayer  ");
+
+        PlayerResponse response = playerService.create(request);
+
+        assertThat(response.displayName()).isEqualTo("ArenaExamplePlayer");
+        assertThat(response.status()).isEqualTo(PlayerStatus.ACTIVE);
+
+        verify(playerRepository).save(any(Player.class));
+    }
+
+    @Test
+    void createRejectsDuplicateDisplayName() {
+        when(playerRepository.existsByDisplayNameIgnoreCase("ArenaExamplePlayer"))
+                .thenReturn(true);
+
+        CreatePlayerRequest request = new CreatePlayerRequest();
+        request.setDisplayName("ArenaExamplePlayer");
+
+        assertThatThrownBy(() -> playerService.create(request))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("already exists");
+    }
+
+    @Test
+    void getReturnsExistingPlayer() {
+        Player player = new Player();
+        player.setDisplayName("ArenaExamplePlayer");
+
+        when(playerRepository.findById(1L)).
+                thenReturn(Optional.of(player));
+
+        PlayerResponse response = playerService.get(1L);
+
+        assertThat(response.displayName()).isEqualTo("ArenaExamplePlayer");
+    }
+
+    @Test
+    void getThrowsNotFoundForUnknownPlayer() {
+        when(playerRepository.findById(99L))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> playerService.get(99L))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+
+}
