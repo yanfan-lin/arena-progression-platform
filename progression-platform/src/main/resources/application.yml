@@ -3,6 +3,13 @@ server:
   port: ${PROGRESSION_SERVER_PORT:8081}
 
 spring:
+  # Schema is created and versioned by Flyway
+  # Hibernate only validates that the entity mapping
+  # matches the migration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
   application:
     name: progression-platform
   # Values can be overridden so the same app runs against Docker compose
