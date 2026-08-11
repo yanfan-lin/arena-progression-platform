@@ -214,5 +214,51 @@ class TeamControllerTest {
                 .andExpect(jsonPath("$.code").value("ROSTER_INCOMPLETE"));
     }
 
+    @Test
+    void retireReturns200() throws Exception {
+        when(teamService.retire(1L))
+                .thenReturn(new TeamResponse(
+                        1L,
+                        "ExampleTeam",
+                        ArenaMode.THREE_VS_THREE,
+                        TeamStatus.RETIRED,
+                        1000,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        Instant.now(),
+                        Instant.now(),
+                        List.of(10L, 11L, 12L)
+                ));
+
+        mockMvc.perform(post("/api/v1/teams/1/retire"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("RETIRED"));
+
+    }
+
+    @Test
+    void retireReturns404() throws Exception {
+        when(teamService.retire(99L))
+                .thenThrow(new ResourceNotFoundException("TEAM_NOT_FOUND", "Team not found"));
+
+        mockMvc.perform(post("/api/v1/teams/99/retire"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("TEAM_NOT_FOUND"));
+    }
+
+    @Test
+    void retireReturns409() throws Exception {
+        when(teamService.retire(1L))
+                .thenThrow(new ConflictException("TEAM_ALREADY_RETIRED", "Team is already retired"));
+
+        mockMvc.perform(post("/api/v1/teams/1/retire"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("TEAM_ALREADY_RETIRED"));
+    }
+
 
 }

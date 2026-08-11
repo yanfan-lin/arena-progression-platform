@@ -52,5 +52,12 @@ public class TeamController {
         return teamService.activate(teamId);
     }
 
+    @PostMapping("/{teamId}/retire")
+    public TeamResponse retireTeam(@PathVariable Long teamId) {
+        return teamService.retire(teamId);
+    }
+
+
+
 
 }

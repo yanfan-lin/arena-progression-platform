@@ -78,6 +78,12 @@ public class Team {
         this.activatedAt = activatedAt;
     }
 
+    // Move draft/active team to RETIRED and records when it happened,
+    // The roster and statistics stay untouched for history
+    public void retire(Instant retiredAt) {
+        this.status = TeamStatus.RETIRED;
+        this.retiredAt = retiredAt;
+    }
 
     public Long getTeamId() {
         return teamId;

@@ -175,5 +175,29 @@ public class TeamService {
 
     }
 
+    @Transactional
+    public TeamResponse retire(Long teamId) {
+        // Lock the team row to separate a retirement request from a roster change
+        Team team = teamRepository.findByIdForUpdate(teamId)
+                .orElseThrow(() -> new ResourceNotFoundException("TEAM_NOT_FOUND", "Team not found"));
+
+        if (team.getStatus() == TeamStatus.RETIRED) {
+            throw new ConflictException("TEAM_ALREADY_RETIRED", "Team is already retired");
+        }
+
+        team.retire(clock.instant());
+
+        List<Long> playerIds = teamMemberRepository.findByTeamId(teamId)
+                .stream()
+                .map(TeamMember::getPlayerId)
+                .sorted()
+                .toList();
+
+        return TeamResponse.from(teamRepository.saveAndFlush(team), playerIds);
+
+    }
+
+
+
 
 }

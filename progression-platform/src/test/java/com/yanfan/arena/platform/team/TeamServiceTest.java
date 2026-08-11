@@ -299,6 +299,47 @@ class TeamServiceTest {
 
     }
 
+    @Test
+    void retireMarksTeamAsRetired() {
+        Team team = new Team();
+        team.setName("ExampleTeam");
+        team.setMode(ArenaMode.THREE_VS_THREE);
+
+        when(teamRepository.findByIdForUpdate(1L))
+                .thenReturn(Optional.of(team));
+
+        when(teamMemberRepository.findByTeamId(1L))
+                .thenReturn(List.of(
+                        member(1L, 10L),
+                        member(1L, 11L),
+                        member(1L, 12L)));
+
+        when(clock.instant())
+                .thenReturn(Instant.parse("2026-08-11T00:00:00Z"));
+
+        when(teamRepository.saveAndFlush(any(Team.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        TeamResponse response = teamService.retire(1L);
+
+        assertThat(response.status()).isEqualTo(TeamStatus.RETIRED);
+        assertThat(team.getRetiredAt()).isEqualTo(Instant.parse("2026-08-11T00:00:00Z"));
+        assertThat(response.playerIds()).containsExactly(10L, 11L, 12L);
+
+    }
+
+    @Test
+    void retireRejectsAlreadyRetiredTeam() {
+        Team team = new Team();
+        team.setStatus(TeamStatus.RETIRED);
+        when(teamRepository.findByIdForUpdate(1L))
+                .thenReturn(Optional.of(team));
+
+        assertThatThrownBy(() -> teamService.retire(1L))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("already retired");
+    }
+
     private TeamMember member(Long teamId, Long playerId) {
         TeamMember member = new TeamMember();
 
