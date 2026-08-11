@@ -2,6 +2,7 @@ package com.yanfan.arena.platform.player;
 
 import com.yanfan.arena.platform.common.ConflictException;
 import com.yanfan.arena.platform.common.ResourceNotFoundException;
+import com.yanfan.arena.platform.team.TeamMemberRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -24,6 +25,9 @@ class PlayerServiceTest {
 
     @Mock
     PlayerRepository playerRepository;
+
+    @Mock
+    TeamMemberRepository teamMemberRepository;
 
     @Mock
     Clock clock;
@@ -70,6 +74,22 @@ class PlayerServiceTest {
     }
 
     @Test
+    void createTranslatesDatabaseDuplicateToConflict() {
+        when(playerRepository.existsByDisplayNameIgnoreCase("ArenaExamplePlayer"))
+                .thenReturn(false);
+
+        when(playerRepository.saveAndFlush(any(Player.class)))
+                .thenThrow(new DataIntegrityViolationException("duplicate key"));
+
+        CreatePlayerRequest request = new CreatePlayerRequest();
+        request.setDisplayName("ArenaExamplePlayer");
+
+        assertThatThrownBy(() -> playerService.create(request))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("already exists");
+    }
+
+    @Test
     void getReturnsExistingPlayer() {
         Player player = new Player();
         player.setDisplayName("ArenaExamplePlayer");
@@ -97,8 +117,11 @@ class PlayerServiceTest {
         Player player = new Player();
         player.setDisplayName("ArenaExamplePlayer");
 
-        when(playerRepository.findById(1L))
+        when(playerRepository.findByIdForUpdate(1L))
                 .thenReturn(Optional.of(player));
+
+        when(teamMemberRepository.countActiveTeamMemberships(1L))
+                .thenReturn(0L);
 
         when(clock.instant())
                 .thenReturn(Instant.parse("2026-08-09T00:00:00Z"));
@@ -120,7 +143,7 @@ class PlayerServiceTest {
 
         player.retire(Instant.parse("2026-08-09T00:00:00Z"));
 
-        when(playerRepository.findById(1L))
+        when(playerRepository.findByIdForUpdate(1L))
                 .thenReturn(Optional.of(player));
 
         assertThatThrownBy(() -> playerService.retire(1L))
@@ -130,19 +153,20 @@ class PlayerServiceTest {
     }
 
     @Test
-    void createTranslatesDatabaseDuplicateToConflict() {
-        when(playerRepository.existsByDisplayNameIgnoreCase("ArenaExamplePlayer"))
-                .thenReturn(false);
+    void retireRejectsPlayerOnActiveTeam() {
+        Player player = new Player();
+        player.setDisplayName("ArenaExamplePlayer");
 
-        when(playerRepository.saveAndFlush(any(Player.class)))
-                .thenThrow(new DataIntegrityViolationException("duplicate key"));
+        when(playerRepository.findByIdForUpdate(1L))
+                .thenReturn(Optional.of(player));
 
-        CreatePlayerRequest request = new CreatePlayerRequest();
-        request.setDisplayName("ArenaExamplePlayer");
+        when(teamMemberRepository.countActiveTeamMemberships(1L))
+                .thenReturn(1L);
 
-        assertThatThrownBy(() -> playerService.create(request))
+        assertThatThrownBy(() -> playerService.retire(1L))
                 .isInstanceOf(ConflictException.class)
-                .hasMessageContaining("already exists");
+                .hasMessageContaining("active team");
+
     }
 
 

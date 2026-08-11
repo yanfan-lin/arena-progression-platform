@@ -2,6 +2,7 @@ package com.yanfan.arena.platform.player;
 
 import com.yanfan.arena.platform.common.ConflictException;
 import com.yanfan.arena.platform.common.ResourceNotFoundException;
+import com.yanfan.arena.platform.team.TeamMemberRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,12 +16,15 @@ public class PlayerService {
 
     private final PlayerRepository playerRepository;
 
+    private final TeamMemberRepository teamMemberRepository;
+
     private final Clock clock;
 
 
     @Autowired
-    public PlayerService(PlayerRepository playerRepository, Clock clock) {
+    public PlayerService(PlayerRepository playerRepository, TeamMemberRepository teamMemberRepository, Clock clock) {
         this.playerRepository = playerRepository;
+        this.teamMemberRepository = teamMemberRepository;
         this.clock = clock;
     }
 
@@ -60,7 +64,9 @@ public class PlayerService {
 
     @Transactional
     public PlayerResponse retire(Long playerId) {
-        Player player = playerRepository.findById(playerId)
+        // Lock the player row so retirement request is separate
+        // from team activation request
+        Player player = playerRepository.findByIdForUpdate(playerId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "PLAYER_NOT_FOUND",
                         "Player not found"));
@@ -69,8 +75,12 @@ public class PlayerService {
             throw new ConflictException("PLAYER_RETIRED", "Player is already retired");
         }
 
-        // A player who is in an active 3V3 or 5V5 arena team can not retire,
-        // and this check is added in the team lifecycle operations
+        // A player on an active arena team can not retire
+        if (teamMemberRepository.countActiveTeamMemberships(playerId) > 0) {
+            throw new ConflictException("PLAYER_IN_ACTIVE_TEAM",
+                    "Player on an active team can not be retired");
+        }
+
         player.retire(clock.instant());
 
         // Flush before building the response,

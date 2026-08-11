@@ -90,6 +90,12 @@ class PlayerControllerTest {
     }
 
     @Test
+    void getReturns400ForNonNumericPlayerId() throws Exception {
+        mockMvc.perform(get("/api/v1/players/abc"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void getReturns404ForUnknownPlayer() throws Exception {
         when(playerService.get(99L))
                 .thenThrow(new ResourceNotFoundException("PLAYER_NOT_FOUND", "Player not found"));
@@ -129,10 +135,16 @@ class PlayerControllerTest {
     }
 
     @Test
-    void getReturns400ForNonNumericPlayerId() throws Exception {
-        mockMvc.perform(get("/api/v1/players/abc"))
-                .andExpect(status().isBadRequest());
+    void retireReturns409ForPlayerOnActiveTeam() throws Exception {
+        when(playerService.retire(1L))
+                .thenThrow(new ConflictException("PLAYER_IN_ACTIVE_TEAM",
+                        "Player is on an active team and cannot be retired"));
+
+        mockMvc.perform(post("/api/v1/players/1/retire"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("PLAYER_IN_ACTIVE_TEAM"));
     }
+
 
     @Test
     void unknownRouteReturns404() throws Exception {

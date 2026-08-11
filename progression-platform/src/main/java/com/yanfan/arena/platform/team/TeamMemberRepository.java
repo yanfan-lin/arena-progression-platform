@@ -13,6 +13,14 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
     void deleteByTeamId(Long teamId);
 
     @Query("""
+            SELECT count(tm) FROM TeamMember tm
+            JOIN Team t ON t.teamId = tm.teamId
+            WHERE tm.playerId = :playerId
+              AND t.status = com.yanfan.arena.platform.team.TeamStatus.ACTIVE
+            """)
+    long countActiveTeamMemberships(Long playerId);
+
+    @Query("""
                 SELECT COUNT(tm) FROM TeamMember tm
                 JOIN Team t
                 ON t.teamId = tm.teamId
@@ -21,5 +29,7 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
                 AND t.status = com.yanfan.arena.platform.team.TeamStatus.ACTIVE
             """)
     long countActiveMemberships(Collection<Long> playerIds, ArenaMode mode);
+
+
 
 }
