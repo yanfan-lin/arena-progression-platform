@@ -3,6 +3,7 @@ package com.yanfan.arena.platform.team;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -12,6 +13,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 // Verify the team migration and JPA mapping against a real MySQL instance.
 @SpringBootTest
@@ -63,6 +65,21 @@ class TeamPersistenceIT {
         assertThat(saved.getLosses()).isZero();
         assertThat(saved.getCreatedAt()).isNotNull();
         assertThat(saved.getUpdatedAt()).isNotNull();
+    }
+
+    @Test
+    void teamNamesAreUniqueCaseInsensitivelyWithinMode() {
+        Team first = new Team();
+        first.setName("ArenaTeam");
+        first.setMode(ArenaMode.THREE_VS_THREE);
+        teamRepository.saveAndFlush(first);
+
+        Team duplicate = new Team();
+        duplicate.setName("arenateam");
+        duplicate.setMode(ArenaMode.THREE_VS_THREE);
+
+        assertThatThrownBy(() -> teamRepository.saveAndFlush(duplicate))
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 
 
