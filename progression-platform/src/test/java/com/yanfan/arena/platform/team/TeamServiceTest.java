@@ -93,6 +93,36 @@ class TeamServiceTest {
     }
 
     @Test
+    void getReturnsTeamWithRoster() {
+        Team team = new Team();
+        team.setName("ExampleTeam");
+        team.setMode(ArenaMode.THREE_VS_THREE);
+
+        when(teamRepository.findById(1L))
+                .thenReturn(Optional.of(team));
+
+        when(teamMemberRepository.findByTeamId(1L))
+                .thenReturn(List.of(
+                        member(1L, 10L),
+                        member(1L, 12L),
+                        member(1L, 11L)));
+
+        TeamResponse response = teamService.get(1L);
+
+        assertThat(response.name()).isEqualTo("ExampleTeam");
+        assertThat(response.playerIds()).containsExactly(10L, 11L, 12L);
+    }
+
+    @Test
+    void getThrowsNotFoundForUnknownTeam() {
+        when(teamRepository.findById(99L))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> teamService.get(99L))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
     void replaceRosterReplacesMembers() {
         Team team = new Team();
         team.setName("ExampleTeam");

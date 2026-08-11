@@ -10,12 +10,12 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(TeamController.class)
@@ -44,7 +44,8 @@ class TeamControllerTest {
                         0,
                         0,
                         Instant.now(),
-                        Instant.now()
+                        Instant.now(),
+                        List.of()
                 ));
 
         mockMvc.perform(post("/api/v1/teams")
@@ -78,11 +79,60 @@ class TeamControllerTest {
     }
 
     @Test
+    void getReturns200WithRoster() throws Exception {
+        when(teamService.get(1L))
+                .thenReturn(new TeamResponse(
+                        1L,
+                        "ExampleTeam",
+                        ArenaMode.THREE_VS_THREE,
+                        TeamStatus.DRAFT,
+                        null,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        Instant.now(),
+                        Instant.now(),
+                        List.of(10L, 11L, 12L)
+                ));
+
+        mockMvc.perform(get("/api/v1/teams/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("ExampleTeam"))
+                .andExpect(jsonPath("$.playerIds[0]").value(10));
+    }
+
+    @Test
+    void getReturns404ForUnknownTeam() throws Exception {
+        when(teamService.get(99L))
+                .thenThrow(new ResourceNotFoundException("TEAM_NOT_FOUND", "Team not found"));
+
+        mockMvc.perform(get("/api/v1/teams/99"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("TEAM_NOT_FOUND"));
+    }
+
+    @Test
     void replaceReturns200() throws Exception {
         when(teamService.replaceRoster(eq(1L), any(ReplaceRosterRequest.class)))
-                .thenReturn(new TeamResponse(1L, "ExampleTeam", ArenaMode.THREE_VS_THREE,
-                        TeamStatus.DRAFT, null, 0, 0, 0, 0, 0, 0,
-                        Instant.now(), Instant.now()));
+                .thenReturn(new TeamResponse(
+                        1L,
+                        "ExampleTeam",
+                        ArenaMode.THREE_VS_THREE,
+                        TeamStatus.DRAFT,
+                        null,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        Instant.now(),
+                        Instant.now(),
+                        List.of()
+                ));
 
         mockMvc.perform(put("/api/v1/teams/1/roster")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -132,7 +182,9 @@ class TeamControllerTest {
                         0,
                         0,
                         Instant.now(),
-                        Instant.now()));
+                        Instant.now(),
+                        List.of()
+                ));
 
         mockMvc.perform(post("/api/v1/teams/1/activate"))
                 .andExpect(status().isOk())

@@ -1,8 +1,9 @@
 package com.yanfan.arena.platform.team;
 
 import java.time.Instant;
+import java.util.List;
 
-// API representation of a team
+// API representation of a team including its current roster
 public record TeamResponse(
         Long teamId,
         String name,
@@ -16,9 +17,10 @@ public record TeamResponse(
         int totalDeaths,
         int totalAssists,
         Instant createdAt,
-        Instant updatedAt
-) {
-    public static TeamResponse from(Team team) {
+        Instant updatedAt,
+        List<Long> playerIds) {
+
+    public static TeamResponse from(Team team, List<Long> playerIds) {
         return new TeamResponse(
                 team.getTeamId(),
                 team.getName(),
@@ -32,6 +34,7 @@ public record TeamResponse(
                 team.getTotalDeaths(),
                 team.getTotalAssists(),
                 team.getCreatedAt(),
-                team.getUpdatedAt());
+                team.getUpdatedAt(),
+                playerIds);
     }
 }

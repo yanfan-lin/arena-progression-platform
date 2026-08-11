@@ -56,13 +56,28 @@ public class TeamService {
         try {
             // Save the team now. If two requests use the same name at the same time,
             // the database rejects the second one
-            return TeamResponse.from(teamRepository.saveAndFlush(team));
+            return TeamResponse.from(teamRepository.saveAndFlush(team), List.of());
         } catch (DataIntegrityViolationException ex) {
             // The name was already saved by another request - return 409 just like above
             throw new ConflictException("TEAM_NAME_TAKEN",
                     "A team with this name already exists in this mode");
         }
 
+    }
+
+    @Transactional(readOnly = true)
+    public TeamResponse get(Long teamId) {
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new ResourceNotFoundException("TEAM_NOT_FOUND", "Team not found"));
+
+        // Roster IDs are sorted so the response is stable
+        List<Long> playerIds = teamMemberRepository.findByTeamId(teamId)
+                .stream()
+                .map(TeamMember::getPlayerId)
+                .sorted()
+                .toList();
+
+        return TeamResponse.from(team, playerIds);
     }
 
     @Transactional
@@ -103,7 +118,7 @@ public class TeamService {
             teamMemberRepository.save(member);
         }
 
-        return TeamResponse.from(team);
+        return TeamResponse.from(team, playerIds.stream().sorted().toList());
 
     }
 
@@ -149,12 +164,16 @@ public class TeamService {
                     "A player is already on an active team in this mode");
         }
 
+        List<Long> rosterPlayerIds = members.stream()
+                .map(TeamMember::getPlayerId)
+                .sorted()
+                .toList();
+
         team.activate(clock.instant());
-        return TeamResponse.from(teamRepository.saveAndFlush(team));
+
+        return TeamResponse.from(teamRepository.saveAndFlush(team), rosterPlayerIds);
 
     }
-
-
 
 
 }

@@ -34,6 +34,11 @@ public class TeamController {
         return ResponseEntity.created(location).body(response);
     }
 
+    @GetMapping("/{teamId}")
+    public TeamResponse get(@PathVariable Long teamId) {
+        return teamService.get(teamId);
+    }
+
     @PutMapping("/{teamId}/roster")
     public TeamResponse replaceRoster(
             @PathVariable Long teamId,
