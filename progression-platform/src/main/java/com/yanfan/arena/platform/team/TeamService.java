@@ -10,6 +10,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.util.List;
 
 // Team lifecycle operations
@@ -22,15 +23,18 @@ public class TeamService {
 
     private final PlayerRepository playerRepository;
 
+    private final Clock clock;
+
 
     @Autowired
     // Constructor injection
     public TeamService(TeamRepository teamRepository,
                        TeamMemberRepository teamMemberRepository,
-                       PlayerRepository playerRepository) {
+                       PlayerRepository playerRepository, Clock clock) {
         this.teamRepository = teamRepository;
         this.teamMemberRepository = teamMemberRepository;
         this.playerRepository = playerRepository;
+        this.clock = clock;
     }
 
 
@@ -102,6 +106,55 @@ public class TeamService {
         return TeamResponse.from(team);
 
     }
+
+    @Transactional
+    public TeamResponse activate(Long teamId) {
+        // Lock the team row so two team activation requests
+        // can not pass the checks at the same time.
+        Team team = teamRepository.findByIdForUpdate(teamId)
+                .orElseThrow(() -> new ResourceNotFoundException("TEAM_NOT_FOUND", "Team not found"));
+
+        if (team.getStatus() != TeamStatus.DRAFT) {
+            throw new ConflictException("TEAM_NOT_DRAFT", "Only draft teams can be activated");
+        }
+
+        List<TeamMember> members = teamMemberRepository.findByTeamId(teamId);
+        int requiredSize = team.getMode() == ArenaMode.THREE_VS_THREE ? 3 : 5;
+
+        if (members.size() != requiredSize) {
+            throw new ConflictException("ROSTER_INCOMPLETE",
+                    "A " + team.getMode() + " team needs exactly " + requiredSize + " players");
+        }
+
+        List<Long> playerIds = members
+                .stream()
+                .map(TeamMember::getPlayerId)
+                .toList();
+
+        // Lock players in ascending ID order so concurrent team activations never deadlock
+        // Circular wait case like: team A wants player 1 2 3, and team B wants player 2 3 5;
+        //                          A waits for player 2, B waits for player 3
+        // will not happen.
+        List<Player> players = playerRepository.findAllByIdForUpdate(playerIds);
+
+        for (Player player : players) {
+            if (player.getStatus() != PlayerStatus.ACTIVE) {
+                throw new ConflictException("PLAYER_NOT_ACTIVE", "Retired players cannot be in an active team");
+            }
+        }
+
+        // A player can only belong to one active team per mode
+        if (teamMemberRepository.countActiveMemberships(playerIds, team.getMode()) > 0) {
+            throw new ConflictException("PLAYER_ALREADY_IN_ACTIVE_TEAM",
+                    "A player is already on an active team in this mode");
+        }
+
+        team.activate(clock.instant());
+        return TeamResponse.from(teamRepository.saveAndFlush(team));
+
+    }
+
+
 
 
 }

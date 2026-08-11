@@ -12,12 +12,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -32,6 +34,9 @@ class TeamServiceTest {
 
     @Mock
     PlayerRepository playerRepository;
+
+    @Mock
+    Clock clock;
 
     @InjectMocks
     TeamService teamService;
@@ -171,6 +176,106 @@ class TeamServiceTest {
                 .isInstanceOf(ConflictException.class)
                 .hasMessageContaining("Retired players");
 
+    }
+
+    @Test
+    void activateMarksTeamActiveWithRating() {
+        Team team = new Team();
+        team.setName("ExampleTeam");
+        team.setMode(ArenaMode.THREE_VS_THREE);
+
+        when(teamRepository.findByIdForUpdate(1L))
+                .thenReturn(Optional.of(team));
+
+        when(teamMemberRepository.findByTeamId(1L))
+                .thenReturn(List.of(
+                        member(1L, 10L),
+                        member(1L, 11L),
+                        member(1L, 12L)));
+
+        when(playerRepository.findAllByIdForUpdate(List.of(10L, 11L, 12L)))
+                .thenReturn(List.of(new Player(), new Player(), new Player()));
+
+        when(teamMemberRepository.countActiveMemberships(anyCollection(), eq(ArenaMode.THREE_VS_THREE)))
+                .thenReturn(0L);
+
+        when(clock.instant()).thenReturn(Instant.parse("2026-08-11T00:00:00Z"));
+
+        when(teamRepository.saveAndFlush(any(Team.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        TeamResponse response = teamService.activate(1L);
+
+        assertThat(response.status()).isEqualTo(TeamStatus.ACTIVE);
+        assertThat(response.rating()).isEqualTo(1000);
+        assertThat(team.getActivatedAt()).isEqualTo(Instant.parse("2026-08-11T00:00:00Z"));
+
+    }
+
+    @Test
+    void activateRejectsIncompleteRoster() {
+        Team team = new Team();
+        team.setMode(ArenaMode.FIVE_VS_FIVE);
+
+        when(teamRepository.findByIdForUpdate(1L))
+                .thenReturn(Optional.of(team));
+
+        when(teamMemberRepository.findByTeamId(1L))
+                .thenReturn(List.of(member(1L, 10L), member(1L, 11L)));
+
+        assertThatThrownBy(() -> teamService.activate(1L))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("exactly 5");
+
+    }
+
+    @Test
+    void activateRejectsPlayerAlreadyInActiveTeam() {
+        Team team = new Team();
+        team.setMode(ArenaMode.THREE_VS_THREE);
+
+        when(teamRepository.findByIdForUpdate(1L))
+                .thenReturn(Optional.of(team));
+
+        when(teamMemberRepository.findByTeamId(1L))
+                .thenReturn(List.of(
+                        member(1L, 10L),
+                        member(1L, 11L),
+                        member(1L, 12L)));
+
+        when(playerRepository.findAllByIdForUpdate(List.of(10L, 11L, 12L)))
+                .thenReturn(List.of(new Player(), new Player(), new Player()));
+
+        when(teamMemberRepository.countActiveMemberships(anyCollection(), eq(ArenaMode.THREE_VS_THREE)))
+                .thenReturn(1L);
+
+        assertThatThrownBy(() -> teamService.activate(1L))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("already on an active team");
+
+    }
+
+    @Test
+    void activateRejectsNonDraftTeam() {
+        Team team = new Team();
+        team.setStatus(TeamStatus.ACTIVE);
+
+        when(teamRepository.findByIdForUpdate(1L))
+                .thenReturn(Optional.of(team));
+
+        assertThatThrownBy(() -> teamService.activate(1L))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("Only draft teams");
+
+    }
+
+    private TeamMember member(Long teamId, Long playerId) {
+        TeamMember member = new TeamMember();
+
+        member.setTeamId(teamId);
+        member.setPlayerId(playerId);
+
+        return member;
     }
 
 

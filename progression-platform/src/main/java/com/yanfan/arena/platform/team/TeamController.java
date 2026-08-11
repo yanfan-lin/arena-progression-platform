@@ -42,5 +42,10 @@ public class TeamController {
         return teamService.replaceRoster(teamId, request);
     }
 
+    @PostMapping("/{teamId}/activate")
+    public TeamResponse activateTeam(@PathVariable Long teamId) {
+        return teamService.activate(teamId);
+    }
+
 
 }

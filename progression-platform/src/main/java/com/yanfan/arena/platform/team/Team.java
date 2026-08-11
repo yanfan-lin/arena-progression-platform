@@ -70,6 +70,14 @@ public class Team {
         updatedAt = Instant.now();
     }
 
+    // Move draft team to ACTIVE status, locks the roster,
+    // and initiate arena rating
+    public void activate(Instant activatedAt) {
+        this.status = TeamStatus.ACTIVE;
+        this.rating = 1000;
+        this.activatedAt = activatedAt;
+    }
+
 
     public Long getTeamId() {
         return teamId;

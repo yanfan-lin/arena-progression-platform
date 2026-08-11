@@ -116,5 +116,51 @@ class TeamControllerTest {
                 .andExpect(jsonPath("$.code").value("TEAM_NOT_DRAFT"));
     }
 
+    @Test
+    void activateReturns200() throws Exception {
+        when(teamService.activate(1L))
+                .thenReturn(new TeamResponse(
+                        1L,
+                        "ExampleTeam",
+                        ArenaMode.THREE_VS_THREE,
+                        TeamStatus.ACTIVE,
+                        1000,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        Instant.now(),
+                        Instant.now()));
+
+        mockMvc.perform(post("/api/v1/teams/1/activate"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.rating").value(1000));
+
+    }
+
+    @Test
+    void activateReturns404() throws Exception {
+        when(teamService.activate(99L))
+                .thenThrow(new ResourceNotFoundException("TEAM_NOT_FOUND", "Team not found"));
+
+        mockMvc.perform(post("/api/v1/teams/99/activate"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("TEAM_NOT_FOUND"));
+    }
+
+    @Test
+    void activateReturns409() throws Exception {
+        when(teamService.activate(1L))
+                .thenThrow(new ConflictException("ROSTER_INCOMPLETE",
+                        "A THREE_VS_THREE team needs exactly 3 players"));
+
+        mockMvc.perform(post("/api/v1/teams/1/activate"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("ROSTER_INCOMPLETE"));
+    }
+
 
 }
