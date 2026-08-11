@@ -1,6 +1,10 @@
 package com.yanfan.arena.platform.team;
 
 import com.yanfan.arena.platform.common.ConflictException;
+import com.yanfan.arena.platform.common.ResourceNotFoundException;
+import com.yanfan.arena.platform.player.Player;
+import com.yanfan.arena.platform.player.PlayerRepository;
+import com.yanfan.arena.platform.player.PlayerStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -8,9 +12,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 
+import java.util.List;
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -18,6 +26,12 @@ class TeamServiceTest {
 
     @Mock
     TeamRepository teamRepository;
+
+    @Mock
+    TeamMemberRepository teamMemberRepository;
+
+    @Mock
+    PlayerRepository playerRepository;
 
     @InjectMocks
     TeamService teamService;
@@ -71,6 +85,92 @@ class TeamServiceTest {
         assertThatThrownBy(() -> teamService.create(request))
                 .isInstanceOf(ConflictException.class)
                 .hasMessageContaining("already exists");
+    }
+
+    @Test
+    void replaceRosterReplacesMembers() {
+        Team team = new Team();
+        team.setName("ExampleTeam");
+        team.setMode(ArenaMode.THREE_VS_THREE);
+
+        Player player1 = new Player();
+        player1.setDisplayName("PlayerOne");
+        Player player2 = new Player();
+        player2.setDisplayName("PlayerTwo");
+
+        when(teamRepository.findById(1L))
+                .thenReturn(Optional.of(team));
+
+        when(playerRepository.findAllById(List.of(10L, 11L)))
+                .thenReturn(List.of(player1, player2));
+
+        ReplaceRosterRequest request = new ReplaceRosterRequest();
+        request.setPlayerIds(List.of(10L, 11L));
+
+        TeamResponse response = teamService.replaceRoster(1L, request);
+
+        verify(teamMemberRepository).deleteByTeamId(1L);
+        verify(teamMemberRepository, org.mockito.Mockito.times(2))
+                .save(any(TeamMember.class));
+
+        assertThat(response.name()).isEqualTo("ExampleTeam");
+    }
+
+    @Test
+    void replaceRosterRejectsNonDraftTeam() {
+        Team team = new Team();
+        team.setStatus(TeamStatus.ACTIVE);
+
+        when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
+
+        ReplaceRosterRequest request = new ReplaceRosterRequest();
+        request.setPlayerIds(List.of(10L));
+
+        assertThatThrownBy(() -> teamService.replaceRoster(1L, request))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("Only draft teams");
+    }
+
+    @Test
+    void replaceRosterRejectsMissingPlayer() {
+        Team team = new Team();
+
+        when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
+
+        Player player1 = new Player();
+        player1.setDisplayName("PlayerOne");
+
+        when(playerRepository.findAllById(List.of(10L, 11L)))
+                .thenReturn(List.of(player1));
+
+        ReplaceRosterRequest request = new ReplaceRosterRequest();
+        request.setPlayerIds(List.of(10L, 11L));
+
+        assertThatThrownBy(() -> teamService.replaceRoster(1L, request))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("do not exist");
+    }
+
+    @Test
+    void replaceRosterRejectsRetiredPlayer() {
+        Team team = new Team();
+
+        when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
+
+        Player retired = new Player();
+        retired.setDisplayName("RetiredPlayer");
+        retired.setStatus(PlayerStatus.RETIRED);
+
+        when(playerRepository.findAllById(List.of(10L)))
+                .thenReturn(List.of(retired));
+
+        ReplaceRosterRequest request = new ReplaceRosterRequest();
+        request.setPlayerIds(List.of(10L));
+
+        assertThatThrownBy(() -> teamService.replaceRoster(1L, request))
+                .isInstanceOf(ConflictException.class)
+                .hasMessageContaining("Retired players");
+
     }
 
 
