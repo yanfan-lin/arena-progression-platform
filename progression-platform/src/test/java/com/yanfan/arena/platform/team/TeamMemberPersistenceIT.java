@@ -21,7 +21,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 // Verify the team member migration and repository against a real MySQL instance
 @SpringBootTest
 @Testcontainers
-public class TeamMemberPersistenceIT {
+class TeamMemberPersistenceIT {
 
     @Container
     static final MySQLContainer<?> MYSQL = new MySQLContainer<>(DockerImageName.parse("mysql:8.4.11"))
