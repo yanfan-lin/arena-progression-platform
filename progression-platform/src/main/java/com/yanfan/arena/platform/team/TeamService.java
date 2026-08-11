@@ -8,6 +8,7 @@ import com.yanfan.arena.platform.player.PlayerStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
@@ -82,7 +83,7 @@ public class TeamService {
 
     @Transactional
     public TeamResponse replaceRoster(Long teamId, ReplaceRosterRequest request) {
-        Team team = teamRepository.findById(teamId)
+        Team team = teamRepository.findByIdForUpdate(teamId)
                 .orElseThrow(() -> new ResourceNotFoundException("TEAM_NOT_FOUND", "Team not found"));
 
         if (team.getStatus() != TeamStatus.DRAFT) {
@@ -122,10 +123,8 @@ public class TeamService {
 
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public TeamResponse activate(Long teamId) {
-        // Lock the team row so two team activation requests
-        // can not pass the checks at the same time.
         Team team = teamRepository.findByIdForUpdate(teamId)
                 .orElseThrow(() -> new ResourceNotFoundException("TEAM_NOT_FOUND", "Team not found"));
 

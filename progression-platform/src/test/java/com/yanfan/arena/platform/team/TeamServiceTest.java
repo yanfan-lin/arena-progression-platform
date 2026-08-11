@@ -133,7 +133,7 @@ class TeamServiceTest {
         Player player2 = new Player();
         player2.setDisplayName("PlayerTwo");
 
-        when(teamRepository.findById(1L))
+        when(teamRepository.findByIdForUpdate(1L))
                 .thenReturn(Optional.of(team));
 
         when(playerRepository.findAllById(List.of(10L, 11L)))
@@ -156,7 +156,7 @@ class TeamServiceTest {
         Team team = new Team();
         team.setStatus(TeamStatus.ACTIVE);
 
-        when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
+        when(teamRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(team));
 
         ReplaceRosterRequest request = new ReplaceRosterRequest();
         request.setPlayerIds(List.of(10L));
@@ -170,7 +170,7 @@ class TeamServiceTest {
     void replaceRosterRejectsMissingPlayer() {
         Team team = new Team();
 
-        when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
+        when(teamRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(team));
 
         Player player1 = new Player();
         player1.setDisplayName("PlayerOne");
@@ -190,7 +190,7 @@ class TeamServiceTest {
     void replaceRosterRejectsRetiredPlayer() {
         Team team = new Team();
 
-        when(teamRepository.findById(1L)).thenReturn(Optional.of(team));
+        when(teamRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(team));
 
         Player retired = new Player();
         retired.setDisplayName("RetiredPlayer");
