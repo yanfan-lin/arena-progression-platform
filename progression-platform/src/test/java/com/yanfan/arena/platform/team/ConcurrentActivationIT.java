@@ -71,12 +71,17 @@ public class ConcurrentActivationIT {
         Future<Throwable> teamAResult = executor.submit(() -> activate(teamAId, ready, start));
         Future<Throwable> teamBResult = executor.submit(() -> activate(teamBId, ready, start));
 
-        ready.await(10, TimeUnit.SECONDS);
-        start.countDown();
+        Throwable teamAError = null;
+        Throwable teamBError = null;
+        try {
+            assertThat(ready.await(10, TimeUnit.SECONDS)).isTrue();
+            start.countDown();
 
-        Throwable teamAError = teamAResult.get(30, TimeUnit.SECONDS);
-        Throwable teamBError = teamBResult.get(30, TimeUnit.SECONDS);
-        executor.shutdownNow();
+            teamAError = teamAResult.get(30, TimeUnit.SECONDS);
+            teamBError = teamBResult.get(30, TimeUnit.SECONDS);
+        } finally {
+            executor.shutdownNow();
+        }
 
         // Exactly one activation succeeds, the other must be a conflict.
         assertThat(teamAError == null ^ teamBError == null).isTrue();
