@@ -7,8 +7,3 @@ An event-driven multiplayer game backend for player XP, team Elo ratings, reliab
 - `arena-contract` — shared versioned match event contract
 - `progression-platform` — backend: match processing, progression, ratings, leaderboards
 - `arena-simulator` — standalone producer of simulated completed matches
-
-## Status
-
-- Milestone 1: multi-module scaffold completed. 
-- Milestone 2: local infrastructure and configuration implemented
