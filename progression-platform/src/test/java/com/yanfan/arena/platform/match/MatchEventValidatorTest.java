@@ -5,6 +5,8 @@ import com.yanfan.arena.contract.MatchMode;
 import jakarta.validation.Validation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Instant;
 import java.util.List;
@@ -140,6 +142,54 @@ class MatchEventValidatorTest {
                 .doesNotThrowAnyException();
     }
 
+    @Test
+    void nullTeamsListIsRejected() {
+        assertThatThrownBy(() -> validator.validate(event(null)))
+                .isInstanceOf(MatchEventValidationException.class)
+                .hasMessageContaining("invalid");
+    }
+
+    @Test
+    void nullTeamElementIsRejected() {
+        assertThatThrownBy(() -> validator.validate(event(
+                java.util.Arrays.asList(team(1L, 101L, 102L, 103L), null))))
+                .isInstanceOf(MatchEventValidationException.class)
+                .hasMessageContaining("invalid");
+    }
+
+    @Test
+    void nullPlayerElementIsRejected() {
+        ArenaMatchCompleted.Team teamA = teamOf(1L,
+                new ArenaMatchCompleted.Player(101L, 1, 1, 1),
+                null,
+                new ArenaMatchCompleted.Player(103L, 1, 1, 1));
+
+        assertThatThrownBy(() -> validator.validate(event(
+                List.of(teamA, team(2L, 201L, 202L, 203L)))))
+                .isInstanceOf(MatchEventValidationException.class)
+                .hasMessageContaining("invalid");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"kills", "deaths", "assists"})
+    void nullStatValueIsRejected(String stat) {
+        ArenaMatchCompleted.Player player = switch (stat) {
+            case "kills" -> new ArenaMatchCompleted.Player(101L, null, 1, 1);
+            case "deaths" -> new ArenaMatchCompleted.Player(101L, 1, null, 1);
+            default -> new ArenaMatchCompleted.Player(101L, 1, 1, null);
+        };
+
+        ArenaMatchCompleted.Team teamA = teamOf(1L,
+                player,
+                new ArenaMatchCompleted.Player(102L, 1, 1, 1),
+                new ArenaMatchCompleted.Player(103L, 1, 1, 1));
+
+        assertThatThrownBy(() -> validator.validate(event(
+                List.of(teamA, team(2L, 201L, 202L, 203L)))))
+                .isInstanceOf(MatchEventValidationException.class)
+                .hasMessageContaining("invalid");
+    }
+
     private ArenaMatchCompleted validEvent() {
         return new ArenaMatchCompleted(
                 ArenaMatchCompleted.CONTRACT_VERSION,
@@ -164,6 +214,22 @@ class MatchEventValidatorTest {
                 .toList();
 
         return new ArenaMatchCompleted.Team(teamId, players);
+    }
+
+    private ArenaMatchCompleted event(List<ArenaMatchCompleted.Team> teams) {
+        return new ArenaMatchCompleted(
+                ArenaMatchCompleted.CONTRACT_VERSION,
+                EVENT_ID,
+                MATCH_ID,
+                MatchMode.THREE_VS_THREE,
+                Instant.parse("2026-08-12T00:00:00Z"),
+                1,
+                teams);
+    }
+
+    // Build the team with the given player objects (null is allowed for structural tests)
+    private ArenaMatchCompleted.Team teamOf(long teamId, ArenaMatchCompleted.Player... players) {
+        return new ArenaMatchCompleted.Team(teamId, java.util.Arrays.asList(players));
     }
 
 

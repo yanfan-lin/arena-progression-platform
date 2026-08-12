@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-// Validate a match even before any business rules run
+// Validate a match event before any business rules run
 @Component
 public class MatchEventValidator {
 
@@ -32,16 +32,6 @@ public class MatchEventValidator {
             throw new MatchEventValidationException("Unsupported contract version");
         }
 
-        // Arena mode decides the exact roster size: 3 for 3v3, 5 for 5v5.
-        int requiredSize = event.mode() == MatchMode.THREE_VS_THREE ? 3 : 5;
-
-        for (ArenaMatchCompleted.Team team : event.teams()) {
-            if (team.participants().size() != requiredSize) {
-                throw new MatchEventValidationException(
-                        event.mode() + " teams need exactly " + requiredSize + " participants");
-            }
-        }
-
         Set<ConstraintViolation<ArenaMatchCompleted>> violations = validator.validate(event);
 
         // For every violation, convert it into a string containing its property path and error message
@@ -52,6 +42,16 @@ public class MatchEventValidator {
                     .collect(Collectors.joining("; "));
 
             throw new MatchEventValidationException("Match event is invalid: " + details);
+        }
+
+        // Run after passing the validation:
+        // Arena mode decides the exact roster size: 3 for 3v3, 5 for 5v5.
+        int requiredSize = event.mode() == MatchMode.THREE_VS_THREE ? 3 : 5;
+        for (ArenaMatchCompleted.Team team : event.teams()) {
+            if (team.participants().size() != requiredSize) {
+                throw new MatchEventValidationException(
+                        event.mode() + " teams need exactly " + requiredSize + " participants");
+            }
         }
 
     }

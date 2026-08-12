@@ -18,14 +18,14 @@ public record ArenaMatchCompleted(
         @NotNull MatchMode mode,
         @NotNull Instant completedAt,
         @Min(1) long winnerTeamId,
-        @NotNull @Size(min = 2, max = 2) List<@Valid Team> teams) {
+        @NotNull @Size(min = 2, max = 2) List<@NotNull @Valid Team> teams) {
 
     public static final int CONTRACT_VERSION = 1;
 
     // Participating team with roster for this match
     public record Team(
             @Min(1) long teamId,
-            @NotNull @Size(min = 1, max = 5) List<@Valid Player> participants) {
+            @NotNull @Size(min = 1, max = 5) List<@NotNull @Valid Player> participants) {
 
     }
 
