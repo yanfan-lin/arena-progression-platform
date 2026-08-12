@@ -13,6 +13,9 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+// Validate the structure of completed match events:
+// contract version, event presence, bean-validation constraints,
+// and exact roster size per arena mode
 class MatchEventValidatorTest {
 
     private MatchEventValidator validator;
@@ -71,6 +74,70 @@ class MatchEventValidatorTest {
         assertThatThrownBy(() -> validator.validate(event))
                 .isInstanceOf(MatchEventValidationException.class)
                 .hasMessageContaining("invalid");
+    }
+
+    @Test
+    void threeVsThreeWithTwoParticipantsIsRejected() {
+        assertThatThrownBy(() -> validator.validate(
+                new ArenaMatchCompleted(
+                        ArenaMatchCompleted.CONTRACT_VERSION,
+                        EVENT_ID.toString(),
+                        MATCH_ID.toString(),
+                        MatchMode.THREE_VS_THREE,
+                        Instant.parse("2026-08-12T00:00:00Z"),
+                        1,
+                        List.of(
+                                team(1L, 101L, 102L),
+                                team(2L, 201L, 202L)))))
+                .isInstanceOf(MatchEventValidationException.class)
+                .hasMessageContaining("exactly 3");
+    }
+
+    @Test
+    void threeVsThreeWithFourParticipantsIsRejected() {
+        assertThatThrownBy(() -> validator.validate(
+                new ArenaMatchCompleted(
+                        ArenaMatchCompleted.CONTRACT_VERSION,
+                        EVENT_ID.toString(),
+                        MATCH_ID.toString(),
+                        MatchMode.THREE_VS_THREE,
+                        Instant.parse("2026-08-12T00:00:00Z"),
+                        1,
+                        List.of(team(1L, 101L, 102L, 103L, 104L),
+                                team(2L, 201L, 202L, 203L, 204L)))))
+                .isInstanceOf(MatchEventValidationException.class)
+                .hasMessageContaining("exactly 3");
+    }
+
+    @Test
+    void fiveVsFiveWithFourParticipantsIsRejected() {
+        assertThatThrownBy(() -> validator.validate(
+                new ArenaMatchCompleted(
+                        ArenaMatchCompleted.CONTRACT_VERSION,
+                        EVENT_ID.toString(),
+                        MATCH_ID.toString(),
+                        MatchMode.FIVE_VS_FIVE,
+                        Instant.parse("2026-08-12T00:00:00Z"),
+                        1,
+                        List.of(team(1L, 101L, 102L, 103L, 104L),
+                                team(2L, 201L, 202L, 203L, 204L)))))
+                .isInstanceOf(MatchEventValidationException.class)
+                .hasMessageContaining("exactly 5");
+    }
+
+    @Test
+    void fiveVsFiveWithExactSizePasses() {
+        assertThatCode(() -> validator.validate(
+                new ArenaMatchCompleted(
+                        ArenaMatchCompleted.CONTRACT_VERSION,
+                        EVENT_ID.toString(),
+                        MATCH_ID.toString(),
+                        MatchMode.FIVE_VS_FIVE,
+                        Instant.parse("2026-08-12T00:00:00Z"),
+                        1,
+                        List.of(team(1L, 101L, 102L, 103L, 104L, 105L),
+                                team(2L, 201L, 202L, 203L, 204L, 205L)))))
+                .doesNotThrowAnyException();
     }
 
     private ArenaMatchCompleted validEvent() {

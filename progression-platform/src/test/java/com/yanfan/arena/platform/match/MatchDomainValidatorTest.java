@@ -17,8 +17,10 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
-// Verify that match events are checked against real team/roster state including:
-// teams, mode, winner, exact rosters, and no shared players.
+// Validate the domain of match events against stored team/roster state:
+// teams exist and are active, modes match, the winner participates,
+// rosters match exactly, and no player appears twice within a team
+// or on both teams.
 @ExtendWith(MockitoExtension.class)
 class MatchDomainValidatorTest {
 
@@ -160,6 +162,26 @@ class MatchDomainValidatorTest {
                 .isInstanceOf(MatchEventValidationException.class)
                 .hasMessageContaining("appears on both");
 
+    }
+
+    @Test
+    void duplicatePlayerInsideTeamIsRejected() {
+        when(teamRepository.findAllById(List.of(1L, 2L)))
+                .thenReturn(List.of(activeTeam(1L), activeTeam(2L)));
+
+        ArenaMatchCompleted event = new ArenaMatchCompleted(
+                ArenaMatchCompleted.CONTRACT_VERSION,
+                EVENT_ID.toString(),
+                MATCH_ID.toString(),
+                MatchMode.THREE_VS_THREE,
+                Instant.parse("2026-08-12T00:00:00Z"),
+                1,
+                List.of(team(1L, 101L, 101L, 102L),
+                        team(2L, 201L, 202L, 203L)));
+
+        assertThatThrownBy(() -> validator.validate(event))
+                .isInstanceOf(MatchEventValidationException.class)
+                .hasMessageContaining("more than once");
     }
 
     // Set up the normal database state: two active 3v3 teams with locked rosters

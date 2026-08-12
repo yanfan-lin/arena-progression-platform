@@ -11,6 +11,9 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+// Validate the statistics of match events: balanced stats pass,
+// kills must equal the opponent team's deaths,
+// and assists cannot exceed the theoretical maximum.
 class MatchStatisticsValidatorTest {
 
     private static final UUID EVENT_ID = UUID.fromString("4e74866d-5a18-4695-bf5e-ff8b79226b79");
