@@ -7,13 +7,14 @@ import jakarta.validation.constraints.Size;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 // Version 1 of the wire contract for a completed arena match
 // Kafka Producers publish it, then platform consumes and validates it
 public record ArenaMatchCompleted(
         @NotNull Integer contractVersion,
-        @NotNull String eventId,
-        @NotNull String matchId,
+        @NotNull UUID eventId,
+        @NotNull UUID matchId,
         @NotNull MatchMode mode,
         @NotNull Instant completedAt,
         @Min(1) long winnerTeamId,

@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 // Validate the structure of completed match events:
 // contract version, event presence, bean-validation constraints,
-// and exact roster size per arena mode
+// and exact roster size per arena mode.
 class MatchEventValidatorTest {
 
     private MatchEventValidator validator;
@@ -48,8 +48,8 @@ class MatchEventValidatorTest {
     void unsupportedVersionIsRejected() {
         ArenaMatchCompleted event = new ArenaMatchCompleted(
                 99,
-                EVENT_ID.toString(),
-                MATCH_ID.toString(),
+                EVENT_ID,
+                MATCH_ID,
                 MatchMode.THREE_VS_THREE,
                 Instant.parse("2026-08-12T00:00:00Z"),
                 1,
@@ -64,8 +64,8 @@ class MatchEventValidatorTest {
     void structurallyInvalidEventIsRejected() {
         ArenaMatchCompleted event = new ArenaMatchCompleted(
                 ArenaMatchCompleted.CONTRACT_VERSION,
-                EVENT_ID.toString(),
-                MATCH_ID.toString(),
+                EVENT_ID,
+                MATCH_ID,
                 MatchMode.THREE_VS_THREE,
                 Instant.parse("2026-08-12T00:00:00Z"),
                 1,
@@ -81,8 +81,8 @@ class MatchEventValidatorTest {
         assertThatThrownBy(() -> validator.validate(
                 new ArenaMatchCompleted(
                         ArenaMatchCompleted.CONTRACT_VERSION,
-                        EVENT_ID.toString(),
-                        MATCH_ID.toString(),
+                        EVENT_ID,
+                        MATCH_ID,
                         MatchMode.THREE_VS_THREE,
                         Instant.parse("2026-08-12T00:00:00Z"),
                         1,
@@ -98,8 +98,8 @@ class MatchEventValidatorTest {
         assertThatThrownBy(() -> validator.validate(
                 new ArenaMatchCompleted(
                         ArenaMatchCompleted.CONTRACT_VERSION,
-                        EVENT_ID.toString(),
-                        MATCH_ID.toString(),
+                        EVENT_ID,
+                        MATCH_ID,
                         MatchMode.THREE_VS_THREE,
                         Instant.parse("2026-08-12T00:00:00Z"),
                         1,
@@ -114,8 +114,8 @@ class MatchEventValidatorTest {
         assertThatThrownBy(() -> validator.validate(
                 new ArenaMatchCompleted(
                         ArenaMatchCompleted.CONTRACT_VERSION,
-                        EVENT_ID.toString(),
-                        MATCH_ID.toString(),
+                        EVENT_ID,
+                        MATCH_ID,
                         MatchMode.FIVE_VS_FIVE,
                         Instant.parse("2026-08-12T00:00:00Z"),
                         1,
@@ -130,8 +130,8 @@ class MatchEventValidatorTest {
         assertThatCode(() -> validator.validate(
                 new ArenaMatchCompleted(
                         ArenaMatchCompleted.CONTRACT_VERSION,
-                        EVENT_ID.toString(),
-                        MATCH_ID.toString(),
+                        EVENT_ID,
+                        MATCH_ID,
                         MatchMode.FIVE_VS_FIVE,
                         Instant.parse("2026-08-12T00:00:00Z"),
                         1,
@@ -143,8 +143,8 @@ class MatchEventValidatorTest {
     private ArenaMatchCompleted validEvent() {
         return new ArenaMatchCompleted(
                 ArenaMatchCompleted.CONTRACT_VERSION,
-                EVENT_ID.toString(),
-                MATCH_ID.toString(),
+                EVENT_ID,
+                MATCH_ID,
                 MatchMode.THREE_VS_THREE,
                 Instant.parse("2026-08-12T00:00:00Z"),
                 1,

@@ -54,8 +54,8 @@ class MatchDomainValidatorTest {
     void sameTeamOnBothSidesIsRejected() {
         ArenaMatchCompleted event = new ArenaMatchCompleted(
                 ArenaMatchCompleted.CONTRACT_VERSION,
-                EVENT_ID.toString(),
-                MATCH_ID.toString(),
+                EVENT_ID,
+                MATCH_ID,
                 MatchMode.THREE_VS_THREE,
                 Instant.parse("2026-08-12T00:00:00Z"),
                 1,
@@ -110,8 +110,8 @@ class MatchDomainValidatorTest {
 
         ArenaMatchCompleted event = new ArenaMatchCompleted(
                 ArenaMatchCompleted.CONTRACT_VERSION,
-                EVENT_ID.toString(),
-                MATCH_ID.toString(),
+                EVENT_ID,
+                MATCH_ID,
                 MatchMode.THREE_VS_THREE,
                 Instant.parse("2026-08-12T00:00:00Z"),
                 99,
@@ -130,8 +130,8 @@ class MatchDomainValidatorTest {
 
         ArenaMatchCompleted event = new ArenaMatchCompleted(
                 ArenaMatchCompleted.CONTRACT_VERSION,
-                EVENT_ID.toString(),
-                MATCH_ID.toString(),
+                EVENT_ID,
+                MATCH_ID,
                 MatchMode.THREE_VS_THREE,
                 Instant.parse("2026-08-12T00:00:00Z"),
                 1,
@@ -150,8 +150,8 @@ class MatchDomainValidatorTest {
 
         ArenaMatchCompleted event = new ArenaMatchCompleted(
                 ArenaMatchCompleted.CONTRACT_VERSION,
-                EVENT_ID.toString(),
-                MATCH_ID.toString(),
+                EVENT_ID,
+                MATCH_ID,
                 MatchMode.THREE_VS_THREE,
                 Instant.parse("2026-08-12T00:00:00Z"),
                 1,
@@ -171,8 +171,8 @@ class MatchDomainValidatorTest {
 
         ArenaMatchCompleted event = new ArenaMatchCompleted(
                 ArenaMatchCompleted.CONTRACT_VERSION,
-                EVENT_ID.toString(),
-                MATCH_ID.toString(),
+                EVENT_ID,
+                MATCH_ID,
                 MatchMode.THREE_VS_THREE,
                 Instant.parse("2026-08-12T00:00:00Z"),
                 1,
@@ -200,8 +200,8 @@ class MatchDomainValidatorTest {
     private ArenaMatchCompleted validEvent() {
         return new ArenaMatchCompleted(
                 ArenaMatchCompleted.CONTRACT_VERSION,
-                EVENT_ID.toString(),
-                MATCH_ID.toString(),
+                EVENT_ID,
+                MATCH_ID,
                 MatchMode.THREE_VS_THREE,
                 Instant.parse("2026-08-12T00:00:00Z"),
                 1,

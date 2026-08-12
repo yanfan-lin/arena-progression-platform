@@ -8,8 +8,8 @@ import org.springframework.dao.PessimisticLockingFailureException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// Validate that API errors are marked as permanent,
-// database connection, lock, and unexpected errors are retryable
+// Validate that API errors are permanent, while database connection,
+// lock, and unexpected errors are retryable.
 class MatchProcessingErrorClassifierTest {
 
     private final MatchProcessingErrorClassifier classifier = new MatchProcessingErrorClassifier();

@@ -34,8 +34,8 @@ class ArenaMatchCompletedTest {
     void oneTeamFailsStructuralValidation() {
         ArenaMatchCompleted event = new ArenaMatchCompleted(
                 ArenaMatchCompleted.CONTRACT_VERSION,
-                EVENT_ID.toString(),
-                MATCH_ID.toString(),
+                EVENT_ID,
+                MATCH_ID,
                 MatchMode.THREE_VS_THREE,
                 Instant.parse("2026-08-12T00:00:00Z"),
                 1,
@@ -47,8 +47,8 @@ class ArenaMatchCompletedTest {
     private ArenaMatchCompleted validEvent() {
         return new ArenaMatchCompleted(
                 ArenaMatchCompleted.CONTRACT_VERSION,
-                EVENT_ID.toString(),
-                MATCH_ID.toString(),
+                EVENT_ID,
+                MATCH_ID,
                 MatchMode.THREE_VS_THREE,
                 Instant.parse("2026-08-12T00:00:00Z"),
                 1,
