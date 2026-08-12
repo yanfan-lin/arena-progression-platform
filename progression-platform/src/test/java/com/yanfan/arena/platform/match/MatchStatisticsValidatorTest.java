@@ -68,6 +68,42 @@ class MatchStatisticsValidatorTest {
                 .hasMessageContaining("Assists exceed");
     }
 
+    @Test
+    void individualStatsAtMaximumPass() {
+
+        int max = MatchStatisticsValidator.MAX_INDIVIDUAL_STAT;
+
+        assertThatCode(() -> validator.validate(event(
+                team(1L,
+                        player(101L, max, max, max),
+                        player(102L, max, max, max),
+                        player(103L, max, max, max)),
+                team(2L,
+                        player(201L, max, max, max),
+                        player(202L, max, max, max),
+                        player(203L, max, max, max)))))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void individualKillsAboveMaximumIsRejected() {
+
+        int max = MatchStatisticsValidator.MAX_INDIVIDUAL_STAT;
+
+        assertThatThrownBy(() -> validator.validate(event(
+                team(1L,
+                        player(101L, max + 1, 0, 0),
+                        player(102L, 0, 0, 0),
+                        player(103L, 0, 0, 0)),
+                team(2L,
+                        player(201L, 0, 0, 0),
+                        player(202L, 0, 0, 0),
+                        player(203L, 0, 0, 0)))))
+                .isInstanceOf(MatchEventValidationException.class)
+                .hasMessageContaining("maximum");
+    }
+
+
     private ArenaMatchCompleted event(ArenaMatchCompleted.Team teamA, ArenaMatchCompleted.Team teamB) {
         return new ArenaMatchCompleted(
                 ArenaMatchCompleted.CONTRACT_VERSION,

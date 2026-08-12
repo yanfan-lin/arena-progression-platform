@@ -9,7 +9,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,6 +30,10 @@ class MatchDomainValidatorTest {
 
     private static final UUID MATCH_ID = UUID.fromString("0775a8e0-cd3a-4d03-a9d4-62a43fc09d86");
 
+    private static final Instant NOW = Instant.parse("2026-08-12T00:05:00Z");
+
+    private static final Instant ACTIVATED_AT = Instant.parse("2026-08-11T00:00:00Z");
+
     @Mock
     TeamRepository teamRepository;
 
@@ -39,7 +45,8 @@ class MatchDomainValidatorTest {
 
     @BeforeEach
     void setUp() {
-        validator = new MatchDomainValidator(teamRepository, teamMemberRepository);
+        validator = new MatchDomainValidator(teamRepository, teamMemberRepository,
+                Clock.fixed(NOW, ZoneOffset.UTC));
     }
 
     @Test
@@ -184,6 +191,87 @@ class MatchDomainValidatorTest {
                 .hasMessageContaining("more than once");
     }
 
+    @Test
+    void completedAtBeforeTeamActivationIsRejected() {
+        Team lateActivation = activeTeam(2L);
+        lateActivation.setActivatedAt(Instant.parse("2026-08-12T00:10:00Z"));
+
+        when(teamRepository.findAllById(List.of(1L, 2L)))
+                .thenReturn(List.of(activeTeam(1L), lateActivation));
+
+        ArenaMatchCompleted event = new ArenaMatchCompleted(
+                ArenaMatchCompleted.CONTRACT_VERSION,
+                EVENT_ID,
+                MATCH_ID,
+                MatchMode.THREE_VS_THREE,
+                Instant.parse("2026-08-12T00:00:00Z"),
+                1,
+                List.of(team(1L, 101L, 102L, 103L),
+                        team(2L, 201L, 202L, 203L)));
+
+        assertThatThrownBy(() -> validator.validate(event))
+                .isInstanceOf(MatchEventValidationException.class)
+                .hasMessageContaining("activated");
+    }
+
+    @Test
+    void completedAtTooFarInTheFutureIsRejected() {
+        when(teamRepository.findAllById(List.of(1L, 2L)))
+                .thenReturn(List.of(activeTeam(1L), activeTeam(2L)));
+
+        ArenaMatchCompleted event = new ArenaMatchCompleted(
+                ArenaMatchCompleted.CONTRACT_VERSION,
+                EVENT_ID,
+                MATCH_ID,
+                MatchMode.THREE_VS_THREE,
+                NOW.plusSeconds(6 * 60),
+                1,
+                List.of(team(1L, 101L, 102L, 103L),
+                        team(2L, 201L, 202L, 203L)));
+
+        assertThatThrownBy(() -> validator.validate(event))
+                .isInstanceOf(MatchEventValidationException.class)
+                .hasMessageContaining("future");
+    }
+
+    @Test
+    void completedAtWithinFutureTolerancePasses() {
+
+        stubValidState();
+
+        ArenaMatchCompleted event = new ArenaMatchCompleted(
+                ArenaMatchCompleted.CONTRACT_VERSION,
+                EVENT_ID,
+                MATCH_ID,
+                MatchMode.THREE_VS_THREE,
+                NOW.plusSeconds(4 * 60),
+                1,
+                List.of(team(1L, 101L, 102L, 103L),
+                        team(2L, 201L, 202L, 203L)));
+
+        assertThatCode(() -> validator.validate(event))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void completedAtExactlyAtFutureTolerancePasses() {
+
+        stubValidState();
+
+        ArenaMatchCompleted event = new ArenaMatchCompleted(
+                ArenaMatchCompleted.CONTRACT_VERSION,
+                EVENT_ID,
+                MATCH_ID,
+                MatchMode.THREE_VS_THREE,
+                NOW.plusSeconds(5 * 60),
+                1,
+                List.of(team(1L, 101L, 102L, 103L),
+                        team(2L, 201L, 202L, 203L)));
+
+        assertThatCode(() -> validator.validate(event))
+                .doesNotThrowAnyException();
+    }
+
     // Set up the normal database state: two active 3v3 teams with locked rosters
     private void stubValidState() {
         when(teamRepository.findAllById(List.of(1L, 2L)))
@@ -226,6 +314,7 @@ class MatchDomainValidatorTest {
         team.setName("Team" + teamId);
         team.setMode(ArenaMode.THREE_VS_THREE);
         team.setStatus(TeamStatus.ACTIVE);
+        team.setActivatedAt(ACTIVATED_AT);
 
         return team;
     }

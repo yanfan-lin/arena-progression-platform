@@ -7,9 +7,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class MatchStatisticsValidator {
 
+    public static final int MAX_INDIVIDUAL_STAT = 100_000;
+
     public void validate(ArenaMatchCompleted event) {
         ArenaMatchCompleted.Team teamA = event.teams().get(0);
         ArenaMatchCompleted.Team teamB = event.teams().get(1);
+
+        checkIndividualStats(teamA);
+        checkIndividualStats(teamB);
 
         long killsA = totalKills(teamA);
         long killsB = totalKills(teamB);
@@ -48,6 +53,18 @@ public class MatchStatisticsValidator {
         return team.participants().stream()
                 .mapToLong(ArenaMatchCompleted.Player::assists)
                 .sum();
+    }
+
+    private void checkIndividualStats(ArenaMatchCompleted.Team team) {
+        for (ArenaMatchCompleted.Player player : team.participants()) {
+            if (player.kills() > MAX_INDIVIDUAL_STAT
+                    || player.deaths() > MAX_INDIVIDUAL_STAT
+                    || player.assists() > MAX_INDIVIDUAL_STAT) {
+                throw new MatchEventValidationException(
+                        "Player " + player.playerId() + " has a statistic above the theoretical maximum");
+            }
+        }
+
     }
 
 
