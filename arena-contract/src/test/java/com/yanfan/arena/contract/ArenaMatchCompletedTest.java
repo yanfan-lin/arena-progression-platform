@@ -52,6 +52,7 @@ class ArenaMatchCompletedTest {
                         team(2, 201, 202, 203)));
     }
 
+    // Build the team with given player's IDs
     private ArenaMatchCompleted.Team team(long teamId, long... playerIds) {
         List<ArenaMatchCompleted.Player> players = java.util.Arrays
                 .stream(playerIds)
