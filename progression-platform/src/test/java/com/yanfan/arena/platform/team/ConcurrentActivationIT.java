@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 // Two teams activating the same player at the same time and ONLY one succeeds
 @SpringBootTest
 @Testcontainers
-public class ConcurrentActivationIT {
+class ConcurrentActivationIT {
     @Container
     static final MySQLContainer<?> MYSQL = new MySQLContainer<>(DockerImageName.parse("mysql:8.4.11"))
             .withDatabaseName("arena")
