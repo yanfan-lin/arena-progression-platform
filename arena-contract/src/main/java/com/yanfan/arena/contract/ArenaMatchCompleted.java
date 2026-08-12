@@ -31,9 +31,9 @@ public record ArenaMatchCompleted(
     // Player's statistics(Kills, deaths, and assists) in the match
     public record Player(
             @Min(1) long playerId,
-            @Min(0) int kills,
-            @Min(0) int deaths,
-            @Min(0) int assists) {
+            @NotNull @Min(0) Integer kills,
+            @NotNull @Min(0) Integer deaths,
+            @NotNull @Min(0) Integer assists) {
 
     }
 

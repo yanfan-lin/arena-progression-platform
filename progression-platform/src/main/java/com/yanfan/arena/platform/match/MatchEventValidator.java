@@ -1,6 +1,7 @@
 package com.yanfan.arena.platform.match;
 
 import com.yanfan.arena.contract.ArenaMatchCompleted;
+import com.yanfan.arena.contract.MatchMode;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,16 @@ public class MatchEventValidator {
             throw new MatchEventValidationException("Unsupported contract version");
         }
 
+        // Arena mode decides the exact roster size: 3 for 3v3, 5 for 5v5.
+        int requiredSize = event.mode() == MatchMode.THREE_VS_THREE ? 3 : 5;
+
+        for (ArenaMatchCompleted.Team team : event.teams()) {
+            if (team.participants().size() != requiredSize) {
+                throw new MatchEventValidationException(
+                        event.mode() + " teams need exactly " + requiredSize + " participants");
+            }
+        }
+
         Set<ConstraintViolation<ArenaMatchCompleted>> violations = validator.validate(event);
 
         // For every violation, convert it into a string containing its property path and error message
@@ -42,7 +53,6 @@ public class MatchEventValidator {
 
             throw new MatchEventValidationException("Match event is invalid: " + details);
         }
-
 
     }
 

@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -20,6 +21,10 @@ import static org.mockito.Mockito.when;
 // teams, mode, winner, exact rosters, and no shared players.
 @ExtendWith(MockitoExtension.class)
 class MatchDomainValidatorTest {
+
+    private static final UUID EVENT_ID = UUID.fromString("4e74866d-5a18-4695-bf5e-ff8b79226b79");
+
+    private static final UUID MATCH_ID = UUID.fromString("0775a8e0-cd3a-4d03-a9d4-62a43fc09d86");
 
     @Mock
     TeamRepository teamRepository;
@@ -47,8 +52,8 @@ class MatchDomainValidatorTest {
     void sameTeamOnBothSidesIsRejected() {
         ArenaMatchCompleted event = new ArenaMatchCompleted(
                 ArenaMatchCompleted.CONTRACT_VERSION,
-                "event-1",
-                "match-1",
+                EVENT_ID.toString(),
+                MATCH_ID.toString(),
                 MatchMode.THREE_VS_THREE,
                 Instant.parse("2026-08-12T00:00:00Z"),
                 1,
@@ -103,8 +108,8 @@ class MatchDomainValidatorTest {
 
         ArenaMatchCompleted event = new ArenaMatchCompleted(
                 ArenaMatchCompleted.CONTRACT_VERSION,
-                "event-1",
-                "match-1",
+                EVENT_ID.toString(),
+                MATCH_ID.toString(),
                 MatchMode.THREE_VS_THREE,
                 Instant.parse("2026-08-12T00:00:00Z"),
                 99,
@@ -123,8 +128,8 @@ class MatchDomainValidatorTest {
 
         ArenaMatchCompleted event = new ArenaMatchCompleted(
                 ArenaMatchCompleted.CONTRACT_VERSION,
-                "event-1",
-                "match-1",
+                EVENT_ID.toString(),
+                MATCH_ID.toString(),
                 MatchMode.THREE_VS_THREE,
                 Instant.parse("2026-08-12T00:00:00Z"),
                 1,
@@ -138,10 +143,13 @@ class MatchDomainValidatorTest {
 
     @Test
     void playerOnBothTeamsIsRejected() {
+        when(teamRepository.findAllById(List.of(1L, 2L)))
+                .thenReturn(List.of(activeTeam(1L), activeTeam(2L)));
+
         ArenaMatchCompleted event = new ArenaMatchCompleted(
                 ArenaMatchCompleted.CONTRACT_VERSION,
-                "event-1",
-                "match-1",
+                EVENT_ID.toString(),
+                MATCH_ID.toString(),
                 MatchMode.THREE_VS_THREE,
                 Instant.parse("2026-08-12T00:00:00Z"),
                 1,
@@ -150,7 +158,7 @@ class MatchDomainValidatorTest {
 
         assertThatThrownBy(() -> validator.validate(event))
                 .isInstanceOf(MatchEventValidationException.class)
-                .hasMessageContaining("both teams");
+                .hasMessageContaining("appears on both");
 
     }
 
@@ -170,8 +178,8 @@ class MatchDomainValidatorTest {
     private ArenaMatchCompleted validEvent() {
         return new ArenaMatchCompleted(
                 ArenaMatchCompleted.CONTRACT_VERSION,
-                "event-1",
-                "match-1",
+                EVENT_ID.toString(),
+                MATCH_ID.toString(),
                 MatchMode.THREE_VS_THREE,
                 Instant.parse("2026-08-12T00:00:00Z"),
                 1,

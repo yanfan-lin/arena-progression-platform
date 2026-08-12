@@ -6,6 +6,7 @@ import com.yanfan.arena.platform.team.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -59,19 +60,23 @@ public class MatchDomainValidator {
             throw new MatchEventValidationException("Winner is not one of the participating teams");
         }
 
+        List<Long> participantsAList = participantIds(event.teams().get(0));
+        List<Long> participantsBList = participantIds(event.teams().get(1));
+
+        if (hasDuplicates(participantsAList) || hasDuplicates(participantsBList)) {
+            throw new MatchEventValidationException("A player appears more than once in a team");
+        }
+
+        if (!Collections.disjoint(participantsAList, participantsBList)) {
+            throw new MatchEventValidationException("One player appears on both teams");
+        }
+
         Set<Long> rosterA = rosterIds(teamAId);
         Set<Long> rosterB = rosterIds(teamBId);
 
-        Set<Long> participantsA = participantIds(event.teams().get(0));
-        Set<Long> participantsB = participantIds(event.teams().get(1));
-
-        if (!rosterA.equals(participantsA) || !rosterB.equals(participantsB)) {
+        if (!rosterA.equals(new HashSet<>(participantsAList))
+                || !rosterB.equals(new HashSet<>(participantsBList))) {
             throw new MatchEventValidationException("Submitted participants do not match the locked rosters");
-        }
-
-        Set<Long> allParticipants = new HashSet<>(participantsA);
-        if (!allParticipants.addAll(participantsB)) {
-            throw new MatchEventValidationException("One player appears on both teams");
         }
 
     }
@@ -82,10 +87,14 @@ public class MatchDomainValidator {
                 .collect(Collectors.toSet());
     }
 
-    private Set<Long> participantIds(ArenaMatchCompleted.Team team) {
+    private List<Long> participantIds(ArenaMatchCompleted.Team team) {
         return team.participants().stream()
                 .map(ArenaMatchCompleted.Player::playerId)
-                .collect(Collectors.toSet());
+                .toList();
+    }
+
+    private boolean hasDuplicates(List<Long> ids) {
+        return ids.stream().distinct().count() != ids.size();
     }
 
     private ArenaMode toArenaMode(MatchMode mode) {
@@ -95,6 +104,5 @@ public class MatchDomainValidator {
         };
 
     }
-
 
 }
