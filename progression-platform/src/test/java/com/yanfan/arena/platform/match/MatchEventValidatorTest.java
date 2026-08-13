@@ -26,7 +26,6 @@ class MatchEventValidatorTest {
 
     private static final UUID MATCH_ID = UUID.fromString("0775a8e0-cd3a-4d03-a9d4-62a43fc09d86");
 
-
     @BeforeEach
     void setUp() {
         validator = new MatchEventValidator(
@@ -231,6 +230,5 @@ class MatchEventValidatorTest {
     private ArenaMatchCompleted.Team teamOf(long teamId, ArenaMatchCompleted.Player... players) {
         return new ArenaMatchCompleted.Team(teamId, java.util.Arrays.asList(players));
     }
-
 
 }

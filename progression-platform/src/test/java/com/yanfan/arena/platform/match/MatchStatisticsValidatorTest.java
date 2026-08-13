@@ -103,7 +103,6 @@ class MatchStatisticsValidatorTest {
                 .hasMessageContaining("maximum");
     }
 
-
     private ArenaMatchCompleted event(ArenaMatchCompleted.Team teamA, ArenaMatchCompleted.Team teamB) {
         return new ArenaMatchCompleted(
                 ArenaMatchCompleted.CONTRACT_VERSION,
@@ -122,6 +121,5 @@ class MatchStatisticsValidatorTest {
     private ArenaMatchCompleted.Player player(long playerId, int kills, int deaths, int assists) {
         return new ArenaMatchCompleted.Player(playerId, kills, deaths, assists);
     }
-
 
 }

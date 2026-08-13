@@ -42,7 +42,6 @@ class MatchDomainValidatorTest {
 
     MatchDomainValidator validator;
 
-
     @BeforeEach
     void setUp() {
         validator = new MatchDomainValidator(teamRepository, teamMemberRepository,
@@ -330,6 +329,5 @@ class MatchDomainValidatorTest {
                 })
                 .toList();
     }
-
 
 }

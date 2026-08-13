@@ -17,5 +17,4 @@ public class MatchProcessingErrorClassifier {
         return MatchProcessingErrorType.RETRYABLE;
     }
 
-
 }

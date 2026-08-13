@@ -46,5 +46,4 @@ class MatchProcessingErrorClassifierTest {
                 .isEqualTo(MatchProcessingErrorType.RETRYABLE);
     }
 
-
 }

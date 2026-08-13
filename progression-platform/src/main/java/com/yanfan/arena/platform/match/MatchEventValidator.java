@@ -21,7 +21,6 @@ public class MatchEventValidator {
         this.validator = validator;
     }
 
-
     public void validate(ArenaMatchCompleted event) {
         if (event == null) {
             throw new MatchEventValidationException("Match event is missing");
@@ -55,6 +54,5 @@ public class MatchEventValidator {
         }
 
     }
-
 
 }

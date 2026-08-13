@@ -78,7 +78,6 @@ public class MatchDomainValidator {
             }
         }
 
-
         if (event.winnerTeamId() != teamAId && event.winnerTeamId() != teamBId) {
             throw new MatchEventValidationException("Winner is not one of the participating teams");
         }
