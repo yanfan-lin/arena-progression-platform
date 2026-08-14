@@ -13,8 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-// Calculate every progression change for one arena match
-// Database remains untouched after calculation
+// Calculate every progression change for one arena match.
+// Return the change only, MatchProcessor.java handles database transaction
 @Component
 public class MatchProgressionCalculator {
 
