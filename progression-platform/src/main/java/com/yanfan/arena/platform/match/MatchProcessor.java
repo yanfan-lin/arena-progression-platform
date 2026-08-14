@@ -29,6 +29,9 @@ public class MatchProcessor {
     private final TeamRepository teamRepository;
     private final PlayerRepository playerRepository;
 
+    // Used only by tests to force a rollback after the inserts
+    private boolean failAfterPersist;
+
     @Autowired
     public MatchProcessor(
             MatchEventValidator eventValidator,
@@ -50,6 +53,11 @@ public class MatchProcessor {
         this.matchParticipantResultRepository = matchParticipantResultRepository;
         this.teamRepository = teamRepository;
         this.playerRepository = playerRepository;
+    }
+
+    // For tests-only: make the next process() call fail after the snapshots are inserted
+    void failAfterPersistForTest() {
+        this.failAfterPersist = true;
     }
 
     // One transaction for the whole match
@@ -128,20 +136,13 @@ public class MatchProcessor {
                 );
 
         // Step 7
-        // Store the idempotency record and all the immutable snapshots.
-        // Team results go first because matches references them.
-        processedEventRepository.save(new ProcessedEvent(eventId, matchId));
+        // Store the idempotency record and all the immutable snapshots
+        persistMatch(eventId, matchId, processed);
 
-        matchTeamResultRepository.saveAll(toTeamResultEntities(processed));
-
-        matchParticipantResultRepository.saveAll(toParticipantResultEntities(processed));
-
-        matchResultRepository.save(new MatchResult(
-                matchId,
-                processed.mode(),
-                processed.winningTeamId(),
-                processed.contractVersion(),
-                processed.completedAt()));
+        // Test-only hook: proves the transaction rolls back on failure
+        if (failAfterPersist) {
+            throw new IllegalStateException("Forced failure after match inserts");
+        }
 
         // Step 8
         // Update player's XP and level after the match
@@ -181,6 +182,29 @@ public class MatchProcessor {
                 processed);
 
     }
+
+    // Store the idempotency record and all the immutable snapshots
+    // Protected so that tests can inject a failure after the inserts
+    protected void persistMatch(String eventId,
+                                String matchId,
+                                MatchProcessingResult.ProcessedMatch processed)
+    {
+        processedEventRepository.save(new ProcessedEvent(eventId, matchId));
+
+        matchTeamResultRepository.saveAll(toTeamResultEntities(processed));
+
+        matchParticipantResultRepository.saveAll(toParticipantResultEntities(processed));
+
+        matchResultRepository.save(new MatchResult(
+                matchId,
+                processed.mode(),
+                processed.winningTeamId(),
+                processed.contractVersion(),
+                processed.completedAt())
+        );
+
+    }
+
 
     // Convert computed team results into entity rows for the snapshot table
     private List<MatchTeamResult> toTeamResultEntities(MatchProcessingResult.ProcessedMatch processed) {
