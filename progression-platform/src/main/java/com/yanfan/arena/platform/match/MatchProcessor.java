@@ -128,8 +128,13 @@ public class MatchProcessor {
                 );
 
         // Step 7
-        // Store the idempotency record and all the immutable snapshots
+        // Store the idempotency record and all the immutable snapshots.
+        // Team results go first because matches references them.
         processedEventRepository.save(new ProcessedEvent(eventId, matchId));
+
+        matchTeamResultRepository.saveAll(toTeamResultEntities(processed));
+
+        matchParticipantResultRepository.saveAll(toParticipantResultEntities(processed));
 
         matchResultRepository.save(new MatchResult(
                 matchId,
@@ -137,10 +142,6 @@ public class MatchProcessor {
                 processed.winningTeamId(),
                 processed.contractVersion(),
                 processed.completedAt()));
-
-        matchTeamResultRepository.saveAll(toTeamResultEntities(processed));
-
-        matchParticipantResultRepository.saveAll(toParticipantResultEntities(processed));
 
         // Step 8
         // Update player's XP and level after the match
