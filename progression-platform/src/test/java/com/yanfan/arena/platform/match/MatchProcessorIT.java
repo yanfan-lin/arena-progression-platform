@@ -85,54 +85,69 @@ class MatchProcessorIT {
         MatchProcessingResult result = matchProcessor.process(event);
 
         // The event was processed, and not treated as a duplicate or redeliver events
-        assertThat(result.outcome()).isEqualTo(MatchProcessingResult.MatchProcessingOutcome.PROCESSED);
-        assertThat(result.processed()).isNotNull();
+        assertThat(result.outcome())
+                .isEqualTo(MatchProcessingResult.MatchProcessingOutcome.PROCESSED);
+        assertThat(result.processed())
+                .isNotNull();
 
         // Exactly one row for every snapshot table
-        assertThat(countRows(jdbcTemplate, "processed_events")).isEqualTo(1);
-        assertThat(countRows(jdbcTemplate, "matches")).isEqualTo(1);
-        assertThat(countRows(jdbcTemplate, "match_team_results")).isEqualTo(2);
-        assertThat(countRows(jdbcTemplate, "match_participant_results")).isEqualTo(6);
+        assertThat(countRows(jdbcTemplate, "processed_events"))
+                .isEqualTo(1);
+        assertThat(countRows(jdbcTemplate, "matches"))
+                .isEqualTo(1);
+        assertThat(countRows(jdbcTemplate, "match_team_results"))
+                .isEqualTo(2);
+        assertThat(countRows(jdbcTemplate, "match_participant_results"))
+                .isEqualTo(6);
 
         // Winning players gained 150 XP, losing players gained 100 XP
         Long alphaOneXp = jdbcTemplate.queryForObject(
                 "SELECT total_xp FROM players WHERE player_id = ?", Long.class, 101L);
-        assertThat(alphaOneXp).isEqualTo(650L);
+        assertThat(alphaOneXp)
+                .isEqualTo(650L);
 
         Long betaOneXp = jdbcTemplate.queryForObject(
                 "SELECT total_xp FROM players WHERE player_id = ?", Long.class, 201L);
-        assertThat(betaOneXp).isEqualTo(600L);
+        assertThat(betaOneXp)
+                .isEqualTo(600L);
 
         // The player who crossed 1000 XP leveled up to 2
         Integer alphaTwoLevel = jdbcTemplate.queryForObject(
                 "SELECT level FROM players WHERE player_id = ?", Integer.class, 102L);
-        assertThat(alphaTwoLevel).isEqualTo(2);
+        assertThat(alphaTwoLevel)
+                .isEqualTo(2);
 
         // Equal ratings move 16 points: winner 1016, loser 984
         Integer alphaRating = jdbcTemplate.queryForObject(
                 "SELECT rating FROM teams WHERE team_id = ?", Integer.class, 1L);
-        assertThat(alphaRating).isEqualTo(1016);
+        assertThat(alphaRating)
+                .isEqualTo(1016);
 
         Integer betaRating = jdbcTemplate.queryForObject(
                 "SELECT rating FROM teams WHERE team_id = ?", Integer.class, 2L);
-        assertThat(betaRating).isEqualTo(984);
+        assertThat(betaRating)
+                .isEqualTo(984);
 
         // Team stats updated: Alpha 1 win and 7 kills, Beta 1 loss and 9 deaths
         Integer alphaWins = jdbcTemplate.queryForObject(
                 "SELECT wins FROM teams WHERE team_id = ?", Integer.class, 1L);
-        assertThat(alphaWins).isEqualTo(1);
+        assertThat(alphaWins)
+                .isEqualTo(1);
 
         Integer alphaKills = jdbcTemplate.queryForObject(
                 "SELECT total_kills FROM teams WHERE team_id = ?", Integer.class, 1L);
-        assertThat(alphaKills).isEqualTo(7);
+        assertThat(alphaKills)
+                .isEqualTo(7);
 
         Integer betaLosses = jdbcTemplate.queryForObject(
                 "SELECT losses FROM teams WHERE team_id = ?", Integer.class, 2L);
-        assertThat(betaLosses).isEqualTo(1);
+        assertThat(betaLosses)
+                .isEqualTo(1);
 
         Integer betaDeaths = jdbcTemplate.queryForObject(
                 "SELECT total_deaths FROM teams WHERE team_id = ?", Integer.class, 2L);
-        assertThat(betaDeaths).isEqualTo(9);
+        assertThat(betaDeaths)
+                .isEqualTo(9);
 
         // Return summary for later Redis use
         assertThat(result.processed().teamResults()).hasSize(2);
