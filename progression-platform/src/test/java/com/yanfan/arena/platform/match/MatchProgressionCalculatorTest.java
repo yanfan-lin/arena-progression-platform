@@ -26,6 +26,7 @@ class MatchProgressionCalculatorTest {
 
     private final MatchProgressionCalculator calculator = new MatchProgressionCalculator();
 
+    // Verify that the calculator handles 3v3 match
     @Test
     void computesEloXpAndTeamStats() {
         // Team A is the winner: 5 matches played, 3 wins, 2 losses
@@ -126,6 +127,89 @@ class MatchProgressionCalculatorTest {
 
     }
 
+    // Verify that the calculator also handles a 5v5 match
+    @Test
+    void computesFiveVsFiveProgression() {
+        // Both teams start at 1000 so the expected Elo is the same as 3v3: +/-16
+        Team teamA = team(1L, "Alpha", 1000, 10, 6, 4, 30, 20, 15);
+        Team teamB = team(2L, "Beta", 1000, 8, 3, 5, 18, 25, 10);
+
+        // Five players per team, all starting at 500 XP
+        Player alphaOne = player("AlphaOne", 500L);
+        Player alphaTwo = player("AlphaTwo", 500L);
+        Player alphaThree = player("AlphaThree", 500L);
+        Player alphaFour = player("AlphaFour", 500L);
+        Player alphaFive = player("AlphaFive", 500L);
+        Player betaOne = player("BetaOne", 500L);
+        Player betaTwo = player("BetaTwo", 500L);
+        Player betaThree = player("BetaThree", 500L);
+        Player betaFour = player("BetaFour", 500L);
+        Player betaFive = player("BetaFive", 500L);
+
+        // A completed 5v5 match where team 1 wins
+        // Team A players each get 1 kill; team B players each get 1 death
+        ArenaMatchCompleted event = eventFiveVsFive(1L,
+                eventTeam(1L,
+                        eventPlayer(101L, 1, 0, 0),
+                        eventPlayer(102L, 1, 0, 0),
+                        eventPlayer(103L, 1, 0, 0),
+                        eventPlayer(104L, 1, 0, 0),
+                        eventPlayer(105L, 1, 0, 0)),
+                eventTeam(2L,
+                        eventPlayer(201L, 0, 1, 0),
+                        eventPlayer(202L, 0, 1, 0),
+                        eventPlayer(203L, 0, 1, 0),
+                        eventPlayer(204L, 0, 1, 0),
+                        eventPlayer(205L, 0, 1, 0)));
+
+        // Run the calculation with all ten players
+        MatchProcessingResult.ProcessedMatch result = calculator.calculate(
+                event, teamA, teamB,
+                Map.of(101L, alphaOne, 102L, alphaTwo, 103L, alphaThree,
+                        104L, alphaFour, 105L, alphaFive,
+                        201L, betaOne, 202L, betaTwo, 203L, betaThree,
+                        204L, betaFour, 205L, betaFive));
+
+        // The mode is converted to the platform's 5v5 value
+        assertThat(result.mode()).isEqualTo(ArenaMode.FIVE_VS_FIVE);
+
+        // Two team rows and ten player rows
+        assertThat(result.teamResults()).hasSize(2);
+        assertThat(result.playerResults()).hasSize(10);
+
+        // Winner: 1000 -> 1016, matches 11, wins 7, and 5 more kills
+        MatchProcessingResult.TeamResult teamAResult = result.teamResults().get(0);
+        assertThat(teamAResult.ratingAfter()).isEqualTo(1016);
+        assertThat(teamAResult.matchesPlayedAfter()).isEqualTo(11);
+        assertThat(teamAResult.winsAfter()).isEqualTo(7);
+        assertThat(teamAResult.lossesAfter()).isEqualTo(4);
+        assertThat(teamAResult.totalKillsAfter()).isEqualTo(35);
+        assertThat(teamAResult.totalDeathsAfter()).isEqualTo(20);
+        assertThat(teamAResult.totalAssistsAfter()).isEqualTo(15);
+
+        // Loser: 1000 -> 984, matches 9, losses 6, and 5 more deaths
+        MatchProcessingResult.TeamResult teamBResult = result.teamResults().get(1);
+        assertThat(teamBResult.ratingAfter()).isEqualTo(984);
+        assertThat(teamBResult.matchesPlayedAfter()).isEqualTo(9);
+        assertThat(teamBResult.winsAfter()).isEqualTo(3);
+        assertThat(teamBResult.lossesAfter()).isEqualTo(6);
+        assertThat(teamBResult.totalKillsAfter()).isEqualTo(18);
+        assertThat(teamBResult.totalDeathsAfter()).isEqualTo(30);
+        assertThat(teamBResult.totalAssistsAfter()).isEqualTo(10);
+
+        // First winner: 150 XP, 500 -> 650, still level 1
+        MatchProcessingResult.PlayerResult alphaOneResult = result.playerResults().get(0);
+        assertThat(alphaOneResult.xpEarned()).isEqualTo(150);
+        assertThat(alphaOneResult.totalXpAfter()).isEqualTo(650);
+        assertThat(alphaOneResult.levelAfter()).isEqualTo(1);
+
+        // First loser: 100 XP, 500 -> 600, still level 1
+        MatchProcessingResult.PlayerResult betaOneResult = result.playerResults().get(5);
+        assertThat(betaOneResult.xpEarned()).isEqualTo(100);
+        assertThat(betaOneResult.totalXpAfter()).isEqualTo(600);
+        assertThat(betaOneResult.levelAfter()).isEqualTo(1);
+    }
+
     // Build a Team with the state before a match
     private Team team(long teamId,
                       String name,
@@ -170,6 +254,18 @@ class MatchProgressionCalculatorTest {
                 EVENT_ID,
                 MATCH_ID,
                 MatchMode.THREE_VS_THREE,
+                Instant.parse("2026-08-13T00:00:00Z"),
+                winnerTeamId,
+                List.of(teams));
+    }
+
+    // Build a completed 5v5 match event
+    private ArenaMatchCompleted eventFiveVsFive(long winnerTeamId, ArenaMatchCompleted.Team... teams) {
+        return new ArenaMatchCompleted(
+                ArenaMatchCompleted.CONTRACT_VERSION,
+                EVENT_ID,
+                MATCH_ID,
+                MatchMode.FIVE_VS_FIVE,
                 Instant.parse("2026-08-13T00:00:00Z"),
                 winnerTeamId,
                 List.of(teams));
