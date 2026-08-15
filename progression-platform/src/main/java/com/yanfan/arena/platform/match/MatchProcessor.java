@@ -66,6 +66,10 @@ public class MatchProcessor {
     @Transactional
     public MatchProcessingResult process(ArenaMatchCompleted event) {
 
+        // Consume the test-only failure
+        boolean forcedFailure = failAfterPersist;
+        failAfterPersist = false;
+
         // Step 1
         // Structural validation first, so null or missing IDs
         // throw error and not NullPointerException
@@ -148,11 +152,6 @@ public class MatchProcessor {
         // Store the idempotency record and all the immutable snapshots
         persistMatch(eventId, matchId, processed);
 
-        // Test-only hook: proves the transaction rolls back on failure
-        if (failAfterPersist) {
-            throw new IllegalStateException("Forced failure after match inserts");
-        }
-
         // Step 9
         // Update player's XP and level after the match
         // Entities are managed by transaction,
@@ -182,6 +181,12 @@ public class MatchProcessor {
             team.setTotalKills(teamResult.totalKillsAfter());
             team.setTotalDeaths(teamResult.totalDeathsAfter());
             team.setTotalAssists(teamResult.totalAssistsAfter());
+        }
+
+        // Test-only hook: proves that the whole transaction rolls back on failure
+        // even after the player and team stats updates above
+        if (forcedFailure) {
+            throw new IllegalStateException("Forced failure after match inserts");
         }
 
         // Step 11

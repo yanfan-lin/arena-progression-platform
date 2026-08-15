@@ -105,6 +105,25 @@ class MatchProcessorRollbackIT {
         Integer alphaRating = jdbcTemplate.queryForObject(
                 "SELECT rating FROM teams WHERE team_id = ?", Integer.class, 1L);
         assertThat(alphaRating).isEqualTo(1000);
+
+        // Teams kept their stats
+        Integer alphaMatchesPlayed = jdbcTemplate.queryForObject(
+                "SELECT matches_played FROM teams WHERE team_id = ?", Integer.class, 1L);
+        assertThat(alphaMatchesPlayed).isEqualTo(0);
+
+        Integer alphaWins = jdbcTemplate.queryForObject(
+                "SELECT wins FROM teams WHERE team_id = ?", Integer.class, 1L);
+        assertThat(alphaWins).isEqualTo(0);
+
+        Integer alphaKills = jdbcTemplate.queryForObject(
+                "SELECT total_kills FROM teams WHERE team_id = ?", Integer.class, 1L);
+        assertThat(alphaKills).isEqualTo(0);
+
+        // Player level is unchanged
+        Integer alphaOneLevel = jdbcTemplate.queryForObject(
+                "SELECT level FROM players WHERE player_id = ?", Integer.class, 101L);
+        assertThat(alphaOneLevel).isEqualTo(1);
+
     }
 
 }
