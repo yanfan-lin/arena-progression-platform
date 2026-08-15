@@ -1,9 +1,7 @@
 package com.yanfan.arena.platform.team.persistence;
 
 import com.yanfan.arena.platform.team.domain.ArenaMode;
-import com.yanfan.arena.platform.team.domain.Team;
 import com.yanfan.arena.platform.team.domain.TeamMember;
-import com.yanfan.arena.platform.team.domain.TeamStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
