@@ -1,4 +1,4 @@
-package com.yanfan.arena.platform.match;
+package com.yanfan.arena.platform.match.processing;
 
 import com.yanfan.arena.contract.ArenaMatchCompleted;
 import com.yanfan.arena.contract.MatchMode;
@@ -16,13 +16,14 @@ import org.testcontainers.utility.DockerImageName;
 
 import java.util.UUID;
 
-import static com.yanfan.arena.platform.match.MatchProcessorTestData.*;
+import static com.yanfan.arena.platform.match.processing.MatchProcessorTestData.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-// Verify that one valid 3v3 match updates every table exactly once
+// Verify that a forced mid-transaction failure rolls back every MySQL change
 @SpringBootTest
 @Testcontainers
-class MatchProcessorIT {
+class MatchProcessorRollbackIT {
 
     @Container
     static final MySQLContainer<?> MYSQL = new MySQLContainer<>(DockerImageName.parse("mysql:8.4.11"))
@@ -44,7 +45,7 @@ class MatchProcessorIT {
     MatchProcessor matchProcessor;
 
     @Test
-    void processesValidMatchAndUpdatesEverything() {
+    void failedMatchInsertRollsBackEveryChange() {
 
         insertPlayer(jdbcTemplate, 101L, "AlphaOne", 500L);
         insertPlayer(jdbcTemplate, 102L, "AlphaTwo", 900L);
@@ -56,7 +57,6 @@ class MatchProcessorIT {
         insertTeam(jdbcTemplate, 1L, "Alpha", ArenaMode.THREE_VS_THREE, 1000);
         insertTeam(jdbcTemplate, 2L, "Beta", ArenaMode.THREE_VS_THREE, 1000);
 
-        // Lock the rosters so the for the domain validator
         addMember(jdbcTemplate, 1L, 101L);
         addMember(jdbcTemplate, 1L, 102L);
         addMember(jdbcTemplate, 1L, 103L);
@@ -64,7 +64,10 @@ class MatchProcessorIT {
         addMember(jdbcTemplate, 2L, 202L);
         addMember(jdbcTemplate, 2L, 203L);
 
-        // Team 1 wins
+        // Trigger the test-only failure before processing the event
+        matchProcessor.failBeforeCommitForTest();
+
+        // A completely valid match event
         ArenaMatchCompleted event = event(
                 UUID.fromString("4e74866d-5a18-4695-bf5e-ff8b79226b79"),
                 UUID.fromString("0775a8e0-cd3a-4d03-a9d4-62a43fc09d86"),
@@ -82,76 +85,45 @@ class MatchProcessorIT {
                 )
         );
 
-        MatchProcessingResult result = matchProcessor.process(event);
+        // The processor inserts all snapshots, then throws
+        assertThatThrownBy(() -> matchProcessor.process(event))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Forced failure after match inserts");
 
-        // The event was processed, and not treated as a duplicate or redeliver events
-        assertThat(result.outcome())
-                .isEqualTo(MatchProcessingResult.MatchProcessingOutcome.PROCESSED);
-        assertThat(result.processed())
-                .isNotNull();
+        // No changes after the rollback, and all snapshot tables are empty
+        assertThat(countRows(jdbcTemplate, "processed_events")).isZero();
+        assertThat(countRows(jdbcTemplate, "matches")).isZero();
+        assertThat(countRows(jdbcTemplate, "match_team_results")).isZero();
+        assertThat(countRows(jdbcTemplate, "match_participant_results")).isZero();
 
-        // Exactly one row for every snapshot table
-        assertThat(countRows(jdbcTemplate, "processed_events"))
-                .isEqualTo(1);
-        assertThat(countRows(jdbcTemplate, "matches"))
-                .isEqualTo(1);
-        assertThat(countRows(jdbcTemplate, "match_team_results"))
-                .isEqualTo(2);
-        assertThat(countRows(jdbcTemplate, "match_participant_results"))
-                .isEqualTo(6);
-
-        // Winning players gained 150 XP, losing players gained 100 XP
+        // Players were not given XP
         Long alphaOneXp = jdbcTemplate.queryForObject(
                 "SELECT total_xp FROM players WHERE player_id = ?", Long.class, 101L);
-        assertThat(alphaOneXp)
-                .isEqualTo(650L);
+        assertThat(alphaOneXp).isEqualTo(500L);
 
-        Long betaOneXp = jdbcTemplate.queryForObject(
-                "SELECT total_xp FROM players WHERE player_id = ?", Long.class, 201L);
-        assertThat(betaOneXp)
-                .isEqualTo(600L);
-
-        // The player who crossed 1000 XP leveled up to 2
-        Integer alphaTwoLevel = jdbcTemplate.queryForObject(
-                "SELECT level FROM players WHERE player_id = ?", Integer.class, 102L);
-        assertThat(alphaTwoLevel)
-                .isEqualTo(2);
-
-        // Equal ratings move 16 points: winner 1016, loser 984
+        // Teams kept their original ratings
         Integer alphaRating = jdbcTemplate.queryForObject(
                 "SELECT rating FROM teams WHERE team_id = ?", Integer.class, 1L);
-        assertThat(alphaRating)
-                .isEqualTo(1016);
+        assertThat(alphaRating).isEqualTo(1000);
 
-        Integer betaRating = jdbcTemplate.queryForObject(
-                "SELECT rating FROM teams WHERE team_id = ?", Integer.class, 2L);
-        assertThat(betaRating)
-                .isEqualTo(984);
+        // Teams kept their stats
+        Integer alphaMatchesPlayed = jdbcTemplate.queryForObject(
+                "SELECT matches_played FROM teams WHERE team_id = ?", Integer.class, 1L);
+        assertThat(alphaMatchesPlayed).isEqualTo(0);
 
-        // Team stats updated: Alpha 1 win and 7 kills, Beta 1 loss and 9 deaths
         Integer alphaWins = jdbcTemplate.queryForObject(
                 "SELECT wins FROM teams WHERE team_id = ?", Integer.class, 1L);
-        assertThat(alphaWins)
-                .isEqualTo(1);
+        assertThat(alphaWins).isEqualTo(0);
 
         Integer alphaKills = jdbcTemplate.queryForObject(
                 "SELECT total_kills FROM teams WHERE team_id = ?", Integer.class, 1L);
-        assertThat(alphaKills)
-                .isEqualTo(7);
+        assertThat(alphaKills).isEqualTo(0);
 
-        Integer betaLosses = jdbcTemplate.queryForObject(
-                "SELECT losses FROM teams WHERE team_id = ?", Integer.class, 2L);
-        assertThat(betaLosses)
-                .isEqualTo(1);
+        // Player level is unchanged
+        Integer alphaOneLevel = jdbcTemplate.queryForObject(
+                "SELECT level FROM players WHERE player_id = ?", Integer.class, 101L);
+        assertThat(alphaOneLevel).isEqualTo(1);
 
-        Integer betaDeaths = jdbcTemplate.queryForObject(
-                "SELECT total_deaths FROM teams WHERE team_id = ?", Integer.class, 2L);
-        assertThat(betaDeaths)
-                .isEqualTo(7);
-
-        // Return summary for later Redis use
-        assertThat(result.processed().teamResults()).hasSize(2);
-        assertThat(result.processed().playerResults()).hasSize(6);
     }
 
 }

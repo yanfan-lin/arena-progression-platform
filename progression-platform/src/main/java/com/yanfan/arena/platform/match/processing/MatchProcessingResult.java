@@ -1,4 +1,4 @@
-package com.yanfan.arena.platform.match;
+package com.yanfan.arena.platform.match.processing;
 
 import com.yanfan.arena.platform.team.domain.ArenaMode;
 

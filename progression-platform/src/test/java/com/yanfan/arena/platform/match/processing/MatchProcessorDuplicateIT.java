@@ -1,4 +1,4 @@
-package com.yanfan.arena.platform.match;
+package com.yanfan.arena.platform.match.processing;
 
 import com.yanfan.arena.contract.ArenaMatchCompleted;
 import com.yanfan.arena.contract.MatchMode;
@@ -17,7 +17,7 @@ import org.testcontainers.utility.DockerImageName;
 
 import java.util.UUID;
 
-import static com.yanfan.arena.platform.match.MatchProcessorTestData.*;
+import static com.yanfan.arena.platform.match.processing.MatchProcessorTestData.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 // Verify that duplicate events are ignored
