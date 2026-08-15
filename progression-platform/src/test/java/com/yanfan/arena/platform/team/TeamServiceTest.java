@@ -2,9 +2,9 @@ package com.yanfan.arena.platform.team;
 
 import com.yanfan.arena.platform.error.ConflictException;
 import com.yanfan.arena.platform.error.ResourceNotFoundException;
-import com.yanfan.arena.platform.player.Player;
-import com.yanfan.arena.platform.player.PlayerRepository;
-import com.yanfan.arena.platform.player.PlayerStatus;
+import com.yanfan.arena.platform.player.domain.Player;
+import com.yanfan.arena.platform.player.persistence.PlayerRepository;
+import com.yanfan.arena.platform.player.domain.PlayerStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

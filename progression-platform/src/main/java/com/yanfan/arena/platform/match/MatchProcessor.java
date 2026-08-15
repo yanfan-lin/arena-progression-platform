@@ -1,8 +1,8 @@
 package com.yanfan.arena.platform.match;
 
 import com.yanfan.arena.contract.ArenaMatchCompleted;
-import com.yanfan.arena.platform.player.Player;
-import com.yanfan.arena.platform.player.PlayerRepository;
+import com.yanfan.arena.platform.player.domain.Player;
+import com.yanfan.arena.platform.player.persistence.PlayerRepository;
 import com.yanfan.arena.platform.team.Team;
 import com.yanfan.arena.platform.team.TeamRepository;
 import org.springframework.beans.factory.annotation.Autowired;

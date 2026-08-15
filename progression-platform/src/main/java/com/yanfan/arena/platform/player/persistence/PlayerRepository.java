@@ -1,5 +1,6 @@
-package com.yanfan.arena.platform.player;
+package com.yanfan.arena.platform.player.persistence;
 
+import com.yanfan.arena.platform.player.domain.Player;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;

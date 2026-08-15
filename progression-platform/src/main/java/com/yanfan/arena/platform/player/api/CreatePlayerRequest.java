@@ -1,4 +1,4 @@
-package com.yanfan.arena.platform.player;
+package com.yanfan.arena.platform.player.api;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

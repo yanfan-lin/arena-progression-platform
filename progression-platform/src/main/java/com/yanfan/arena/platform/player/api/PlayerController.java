@@ -1,5 +1,6 @@
-package com.yanfan.arena.platform.player;
+package com.yanfan.arena.platform.player.api;
 
+import com.yanfan.arena.platform.player.service.PlayerService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

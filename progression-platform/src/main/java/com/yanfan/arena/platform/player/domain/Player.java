@@ -1,4 +1,4 @@
-package com.yanfan.arena.platform.player;
+package com.yanfan.arena.platform.player.domain;
 
 import jakarta.persistence.*;
 

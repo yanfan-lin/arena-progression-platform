@@ -2,9 +2,9 @@ package com.yanfan.arena.platform.team;
 
 import com.yanfan.arena.platform.error.ConflictException;
 import com.yanfan.arena.platform.error.ResourceNotFoundException;
-import com.yanfan.arena.platform.player.Player;
-import com.yanfan.arena.platform.player.PlayerRepository;
-import com.yanfan.arena.platform.player.PlayerStatus;
+import com.yanfan.arena.platform.player.domain.Player;
+import com.yanfan.arena.platform.player.persistence.PlayerRepository;
+import com.yanfan.arena.platform.player.domain.PlayerStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;

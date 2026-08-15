@@ -1,5 +1,7 @@
-package com.yanfan.arena.platform.player;
+package com.yanfan.arena.platform.player.persistence;
 
+import com.yanfan.arena.platform.player.domain.Player;
+import com.yanfan.arena.platform.player.domain.PlayerStatus;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

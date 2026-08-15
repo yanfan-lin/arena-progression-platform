@@ -1,4 +1,4 @@
-package com.yanfan.arena.platform.player;
+package com.yanfan.arena.platform.player.persistence;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,7 +1,9 @@
-package com.yanfan.arena.platform.player;
+package com.yanfan.arena.platform.player.api;
 
 import com.yanfan.arena.platform.error.ConflictException;
 import com.yanfan.arena.platform.error.ResourceNotFoundException;
+import com.yanfan.arena.platform.player.domain.PlayerStatus;
+import com.yanfan.arena.platform.player.service.PlayerService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;

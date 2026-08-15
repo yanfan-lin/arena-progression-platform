@@ -1,4 +1,7 @@
-package com.yanfan.arena.platform.player;
+package com.yanfan.arena.platform.player.api;
+
+import com.yanfan.arena.platform.player.domain.Player;
+import com.yanfan.arena.platform.player.domain.PlayerStatus;
 
 import java.time.Instant;
 

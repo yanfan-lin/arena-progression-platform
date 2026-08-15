@@ -1,7 +1,12 @@
-package com.yanfan.arena.platform.player;
+package com.yanfan.arena.platform.player.service;
 
 import com.yanfan.arena.platform.error.ConflictException;
 import com.yanfan.arena.platform.error.ResourceNotFoundException;
+import com.yanfan.arena.platform.player.api.CreatePlayerRequest;
+import com.yanfan.arena.platform.player.api.PlayerResponse;
+import com.yanfan.arena.platform.player.domain.Player;
+import com.yanfan.arena.platform.player.domain.PlayerStatus;
+import com.yanfan.arena.platform.player.persistence.PlayerRepository;
 import com.yanfan.arena.platform.team.TeamMemberRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

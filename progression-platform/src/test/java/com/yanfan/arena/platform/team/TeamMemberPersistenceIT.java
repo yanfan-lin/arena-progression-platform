@@ -1,7 +1,7 @@
 package com.yanfan.arena.platform.team;
 
-import com.yanfan.arena.platform.player.Player;
-import com.yanfan.arena.platform.player.PlayerRepository;
+import com.yanfan.arena.platform.player.domain.Player;
+import com.yanfan.arena.platform.player.persistence.PlayerRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
