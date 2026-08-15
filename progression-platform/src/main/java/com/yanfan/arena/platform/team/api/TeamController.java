@@ -1,5 +1,6 @@
-package com.yanfan.arena.platform.team;
+package com.yanfan.arena.platform.team.api;
 
+import com.yanfan.arena.platform.team.service.TeamService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

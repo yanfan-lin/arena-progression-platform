@@ -1,10 +1,19 @@
-package com.yanfan.arena.platform.team;
+package com.yanfan.arena.platform.team.service;
 
 import com.yanfan.arena.platform.error.ConflictException;
 import com.yanfan.arena.platform.error.ResourceNotFoundException;
 import com.yanfan.arena.platform.player.domain.Player;
 import com.yanfan.arena.platform.player.persistence.PlayerRepository;
 import com.yanfan.arena.platform.player.domain.PlayerStatus;
+import com.yanfan.arena.platform.team.api.CreateTeamRequest;
+import com.yanfan.arena.platform.team.api.ReplaceRosterRequest;
+import com.yanfan.arena.platform.team.api.TeamResponse;
+import com.yanfan.arena.platform.team.domain.ArenaMode;
+import com.yanfan.arena.platform.team.domain.Team;
+import com.yanfan.arena.platform.team.domain.TeamMember;
+import com.yanfan.arena.platform.team.domain.TeamStatus;
+import com.yanfan.arena.platform.team.persistence.TeamMemberRepository;
+import com.yanfan.arena.platform.team.persistence.TeamRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

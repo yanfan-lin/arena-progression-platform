@@ -1,4 +1,8 @@
-package com.yanfan.arena.platform.team;
+package com.yanfan.arena.platform.team.api;
+
+import com.yanfan.arena.platform.team.domain.ArenaMode;
+import com.yanfan.arena.platform.team.domain.Team;
+import com.yanfan.arena.platform.team.domain.TeamStatus;
 
 import java.time.Instant;
 import java.util.List;

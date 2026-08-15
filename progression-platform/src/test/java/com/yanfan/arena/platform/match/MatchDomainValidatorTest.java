@@ -2,7 +2,12 @@ package com.yanfan.arena.platform.match;
 
 import com.yanfan.arena.contract.ArenaMatchCompleted;
 import com.yanfan.arena.contract.MatchMode;
-import com.yanfan.arena.platform.team.*;
+import com.yanfan.arena.platform.team.domain.ArenaMode;
+import com.yanfan.arena.platform.team.domain.Team;
+import com.yanfan.arena.platform.team.domain.TeamMember;
+import com.yanfan.arena.platform.team.domain.TeamStatus;
+import com.yanfan.arena.platform.team.persistence.TeamMemberRepository;
+import com.yanfan.arena.platform.team.persistence.TeamRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

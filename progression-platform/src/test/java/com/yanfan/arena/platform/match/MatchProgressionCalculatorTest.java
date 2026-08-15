@@ -3,9 +3,9 @@ package com.yanfan.arena.platform.match;
 import com.yanfan.arena.contract.ArenaMatchCompleted;
 import com.yanfan.arena.contract.MatchMode;
 import com.yanfan.arena.platform.player.domain.Player;
-import com.yanfan.arena.platform.team.ArenaMode;
-import com.yanfan.arena.platform.team.Team;
-import com.yanfan.arena.platform.team.TeamStatus;
+import com.yanfan.arena.platform.team.domain.ArenaMode;
+import com.yanfan.arena.platform.team.domain.Team;
+import com.yanfan.arena.platform.team.domain.TeamStatus;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;

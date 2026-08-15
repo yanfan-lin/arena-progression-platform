@@ -1,5 +1,8 @@
-package com.yanfan.arena.platform.team;
+package com.yanfan.arena.platform.team.persistence;
 
+import com.yanfan.arena.platform.team.domain.ArenaMode;
+import com.yanfan.arena.platform.team.domain.Team;
+import com.yanfan.arena.platform.team.domain.TeamStatus;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

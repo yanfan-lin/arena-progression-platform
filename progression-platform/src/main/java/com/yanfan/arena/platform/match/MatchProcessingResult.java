@@ -1,6 +1,6 @@
 package com.yanfan.arena.platform.match;
 
-import com.yanfan.arena.platform.team.ArenaMode;
+import com.yanfan.arena.platform.team.domain.ArenaMode;
 
 import java.time.Instant;
 import java.util.List;

@@ -1,4 +1,6 @@
-package com.yanfan.arena.platform.team;
+package com.yanfan.arena.platform.team.api;
+
+import com.yanfan.arena.platform.team.domain.ArenaMode;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

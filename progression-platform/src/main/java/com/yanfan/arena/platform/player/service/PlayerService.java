@@ -7,7 +7,7 @@ import com.yanfan.arena.platform.player.api.PlayerResponse;
 import com.yanfan.arena.platform.player.domain.Player;
 import com.yanfan.arena.platform.player.domain.PlayerStatus;
 import com.yanfan.arena.platform.player.persistence.PlayerRepository;
-import com.yanfan.arena.platform.team.TeamMemberRepository;
+import com.yanfan.arena.platform.team.persistence.TeamMemberRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

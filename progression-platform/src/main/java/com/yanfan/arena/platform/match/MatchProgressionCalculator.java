@@ -5,8 +5,8 @@ import com.yanfan.arena.contract.MatchMode;
 import com.yanfan.arena.platform.player.domain.Player;
 import com.yanfan.arena.platform.progression.EloPolicy;
 import com.yanfan.arena.platform.progression.XpPolicy;
-import com.yanfan.arena.platform.team.ArenaMode;
-import com.yanfan.arena.platform.team.Team;
+import com.yanfan.arena.platform.team.domain.ArenaMode;
+import com.yanfan.arena.platform.team.domain.Team;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;

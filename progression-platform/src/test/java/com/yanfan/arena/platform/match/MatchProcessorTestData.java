@@ -3,7 +3,7 @@ package com.yanfan.arena.platform.match;
 import com.yanfan.arena.contract.ArenaMatchCompleted;
 import com.yanfan.arena.contract.MatchMode;
 import com.yanfan.arena.platform.progression.XpPolicy;
-import com.yanfan.arena.platform.team.ArenaMode;
+import com.yanfan.arena.platform.team.domain.ArenaMode;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.Instant;
