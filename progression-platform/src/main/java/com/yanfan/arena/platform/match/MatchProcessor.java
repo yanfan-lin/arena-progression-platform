@@ -29,8 +29,8 @@ public class MatchProcessor {
     private final MatchParticipantResultRepository matchParticipantResultRepository;
     private final TeamRepository teamRepository;
     private final PlayerRepository playerRepository;
-    // Used only by tests to force a rollback after the inserts
-    private boolean failAfterPersist;
+    // Used only by tests to force a rollback right before the commit
+    private boolean failBeforeCommit;
 
     @Autowired
     public MatchProcessor(
@@ -56,9 +56,9 @@ public class MatchProcessor {
         this.playerRepository = playerRepository;
     }
 
-    // For tests-only: make the next process() call fail after the snapshots are inserted
-    void failAfterPersistForTest() {
-        this.failAfterPersist = true;
+    // For tests-only: make the next process() call fail right before the transaction commits
+    void failBeforeCommitForTest() {
+        this.failBeforeCommit = true;
     }
 
     // One transaction for the whole match
@@ -66,9 +66,9 @@ public class MatchProcessor {
     @Transactional
     public MatchProcessingResult process(ArenaMatchCompleted event) {
 
-        // Consume the test-only failure
-        boolean forcedFailure = failAfterPersist;
-        failAfterPersist = false;
+        // Consume the test-only failure flag so it never sticks for later calls
+        boolean forcedFailure = failBeforeCommit;
+        failBeforeCommit = false;
 
         // Step 1
         // Structural validation first, so null or missing IDs

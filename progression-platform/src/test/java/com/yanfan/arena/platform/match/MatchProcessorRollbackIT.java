@@ -65,7 +65,7 @@ class MatchProcessorRollbackIT {
         addMember(jdbcTemplate, 2L, 203L);
 
         // Trigger the test-only failure before processing the event
-        matchProcessor.failAfterPersistForTest();
+        matchProcessor.failBeforeCommitForTest();
 
         // A completely valid match event
         ArenaMatchCompleted event = event(
