@@ -10,7 +10,8 @@ import java.util.List;
 // DUPLICATE means it was ignored.
 public record MatchProcessingResult(
         MatchProcessingOutcome outcome,
-        ProcessedMatch processed
+        ProcessedMatch processed,
+        ReconciliationData reconciliation
 ) {
 
     // Determine whether a match event is new or redelivered/reused
@@ -19,8 +20,8 @@ public record MatchProcessingResult(
         DUPLICATE
     }
 
-    public static MatchProcessingResult duplicate() {
-        return new MatchProcessingResult(MatchProcessingOutcome.DUPLICATE, null);
+    public static MatchProcessingResult duplicate(ReconciliationData reconciliation) {
+        return new MatchProcessingResult(MatchProcessingOutcome.DUPLICATE, null, reconciliation);
     }
 
     // Immutable record of what the processor stored or changed
@@ -35,6 +36,15 @@ public record MatchProcessingResult(
             List<TeamResult> teamResults,
             List<PlayerResult> playerResults
     ) {
+    }
+
+    // Committed identities for a duplicate event
+    // Redis later rereads current MySQL values for these teams/players
+    public record ReconciliationData(
+            String committedEventId,
+            String committedMatchId,
+            List<Long> teamIds,
+            List<Long> playerIds) {
     }
 
     // Snapshot of the stats of one participating team after the match

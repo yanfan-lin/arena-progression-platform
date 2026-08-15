@@ -63,12 +63,30 @@ class MatchProcessorDuplicateIT {
 
         // First delivery gets processed normally
         MatchProcessingResult first = matchProcessor.process(event);
-        assertThat(first.outcome()).isEqualTo(MatchProcessingResult.MatchProcessingOutcome.PROCESSED);
+        assertThat(first.outcome())
+                .isEqualTo(MatchProcessingResult.MatchProcessingOutcome.PROCESSED);
 
         // Redelivering the exact same event changes nothing
         MatchProcessingResult second = matchProcessor.process(event);
-        assertThat(second.outcome()).isEqualTo(MatchProcessingResult.MatchProcessingOutcome.DUPLICATE);
+        assertThat(second.outcome())
+                .isEqualTo(MatchProcessingResult.MatchProcessingOutcome.DUPLICATE);
+
+        // The duplicate still carries the committed reconciliation data
         assertThat(second.processed()).isNull();
+
+        assertThat(second.reconciliation()).isNotNull();
+
+        assertThat(second.reconciliation().committedEventId())
+                .isEqualTo("4e74866d-5a18-4695-bf5e-ff8b79226b79");
+
+        assertThat(second.reconciliation().committedMatchId())
+                .isEqualTo("0775a8e0-cd3a-4d03-a9d4-62a43fc09d86");
+
+        assertThat(second.reconciliation().teamIds())
+                .containsExactlyInAnyOrder(1L, 2L);
+
+        assertThat(second.reconciliation().playerIds())
+                .hasSize(6);
 
         // No extra rows were written
         assertThat(countRows(jdbcTemplate, "processed_events"))
@@ -83,7 +101,8 @@ class MatchProcessorDuplicateIT {
         // Player XP is still 650, not 800
         Long alphaOneXp = jdbcTemplate.queryForObject(
                 "SELECT total_xp FROM players WHERE player_id = ?", Long.class, 101L);
-        assertThat(alphaOneXp).isEqualTo(650L);
+        assertThat(alphaOneXp)
+                .isEqualTo(650L);
     }
 
     @Test
@@ -113,6 +132,11 @@ class MatchProcessorDuplicateIT {
         MatchProcessingResult result = matchProcessor.process(newEvent);
         assertThat(result.outcome())
                 .isEqualTo(MatchProcessingResult.MatchProcessingOutcome.DUPLICATE);
+
+        // The committed event ID wins over the incoming new one
+        assertThat(result.reconciliation()).isNotNull();
+        assertThat(result.reconciliation().committedEventId())
+                .isEqualTo("4e74866d-5a18-4695-bf5e-ff8b79226b79");
 
         // Still exactly one match stored
         assertThat(countRows(jdbcTemplate, "matches"))
@@ -147,6 +171,11 @@ class MatchProcessorDuplicateIT {
         MatchProcessingResult result = matchProcessor.process(newEvent);
         assertThat(result.outcome())
                 .isEqualTo(MatchProcessingResult.MatchProcessingOutcome.DUPLICATE);
+
+        // The committed match ID wins over the incoming new one
+        assertThat(result.reconciliation()).isNotNull();
+        assertThat(result.reconciliation().committedMatchId())
+                .isEqualTo("0775a8e0-cd3a-4d03-a9d4-62a43fc09d86");
 
         // Still exactly one event record
         assertThat(countRows(jdbcTemplate, "processed_events")).isEqualTo(1);

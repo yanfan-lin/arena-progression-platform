@@ -72,14 +72,17 @@ public class MatchProcessor {
         eventValidator.validate(event);
 
         // Step 2
-        // Idempotency check before processing
-        // if either identifier already exists, this transaction is ignored
+        // Idempotency check before reading or changing any state.
+        // Look up the committed record once: first by event ID, then by match ID.
         String eventId = event.eventId().toString();
         String matchId = event.matchId().toString();
 
-        if (processedEventRepository.existsById(eventId)
-                || processedEventRepository.existsByMatchId(matchId)) {
-            return MatchProcessingResult.duplicate();
+        ProcessedEvent committed = processedEventRepository.findById(eventId)
+                .orElseGet(() -> processedEventRepository.findByMatchId(matchId)
+                        .orElse(null));
+
+        if (committed != null) {
+            return duplicateResult(committed);
         }
 
         // Step 3
@@ -185,8 +188,24 @@ public class MatchProcessor {
         // Return the summary of changes for later Redis updates
         return new MatchProcessingResult(
                 MatchProcessingResult.MatchProcessingOutcome.PROCESSED,
-                processed);
+                processed,
+                null);
 
+    }
+
+    // Build the duplicate outcome from the committed idempotency record.
+    // The stored event/match IDs win over the incoming ones.
+    private MatchProcessingResult duplicateResult(ProcessedEvent committed) {
+        String committedMatchId = committed.getMatchId();
+
+        MatchProcessingResult.ReconciliationData reconciliation =
+                new MatchProcessingResult.ReconciliationData(
+                        committed.getEventId(),
+                        committedMatchId,
+                        matchTeamResultRepository.findTeamIdsByMatchId(committedMatchId),
+                        matchParticipantResultRepository.findPlayerIdsByMatchId(committedMatchId));
+
+        return MatchProcessingResult.duplicate(reconciliation);
     }
 
     // Store the idempotency record and all the immutable snapshots
