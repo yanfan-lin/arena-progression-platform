@@ -2,6 +2,7 @@ package com.yanfan.arena.platform.match;
 
 import com.yanfan.arena.contract.ArenaMatchCompleted;
 import com.yanfan.arena.contract.MatchMode;
+import com.yanfan.arena.platform.match.validation.MatchEventValidationException;
 import com.yanfan.arena.platform.player.domain.Player;
 import com.yanfan.arena.platform.team.domain.ArenaMode;
 import com.yanfan.arena.platform.team.domain.Team;

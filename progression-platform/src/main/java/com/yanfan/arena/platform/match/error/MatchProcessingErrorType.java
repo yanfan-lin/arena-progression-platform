@@ -1,4 +1,4 @@
-package com.yanfan.arena.platform.match;
+package com.yanfan.arena.platform.match.error;
 
 // Represent how a match-processing failure should be treated by the Kafka Listener.
 // PERMANENT -> Retries will not help

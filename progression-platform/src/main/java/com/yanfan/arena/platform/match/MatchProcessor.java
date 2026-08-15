@@ -1,6 +1,10 @@
 package com.yanfan.arena.platform.match;
 
 import com.yanfan.arena.contract.ArenaMatchCompleted;
+import com.yanfan.arena.platform.match.validation.MatchDomainValidator;
+import com.yanfan.arena.platform.match.validation.MatchEventValidationException;
+import com.yanfan.arena.platform.match.validation.MatchEventValidator;
+import com.yanfan.arena.platform.match.validation.MatchStatisticsValidator;
 import com.yanfan.arena.platform.player.domain.Player;
 import com.yanfan.arena.platform.player.persistence.PlayerRepository;
 import com.yanfan.arena.platform.team.domain.Team;

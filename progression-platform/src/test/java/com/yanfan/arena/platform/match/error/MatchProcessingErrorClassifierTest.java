@@ -1,7 +1,8 @@
-package com.yanfan.arena.platform.match;
+package com.yanfan.arena.platform.match.error;
 
 import com.yanfan.arena.platform.error.ConflictException;
 import com.yanfan.arena.platform.error.ResourceNotFoundException;
+import com.yanfan.arena.platform.match.validation.MatchEventValidationException;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.PessimisticLockingFailureException;
