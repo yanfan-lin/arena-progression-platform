@@ -1,4 +1,4 @@
-package com.yanfan.arena.platform.match;
+package com.yanfan.arena.platform.match.persistence.entity;
 
 import jakarta.persistence.*;
 

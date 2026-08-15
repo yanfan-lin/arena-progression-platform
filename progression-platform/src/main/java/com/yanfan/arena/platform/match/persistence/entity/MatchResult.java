@@ -1,4 +1,4 @@
-package com.yanfan.arena.platform.match;
+package com.yanfan.arena.platform.match.persistence.entity;
 
 import com.yanfan.arena.platform.team.domain.ArenaMode;
 import jakarta.persistence.*;

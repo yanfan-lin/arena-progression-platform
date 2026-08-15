@@ -1,5 +1,6 @@
-package com.yanfan.arena.platform.match;
+package com.yanfan.arena.platform.match.persistence.repository;
 
+import com.yanfan.arena.platform.match.persistence.entity.ProcessedEvent;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

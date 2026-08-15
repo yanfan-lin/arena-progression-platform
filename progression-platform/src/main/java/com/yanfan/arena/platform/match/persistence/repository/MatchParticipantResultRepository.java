@@ -1,5 +1,7 @@
-package com.yanfan.arena.platform.match;
+package com.yanfan.arena.platform.match.persistence.repository;
 
+import com.yanfan.arena.platform.match.persistence.entity.MatchParticipantResult;
+import com.yanfan.arena.platform.match.persistence.entity.MatchParticipantResultId;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
