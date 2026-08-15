@@ -80,7 +80,7 @@ class MatchProcessorRollbackIT {
                 ),
                 eventTeam(2L,
                         eventPlayer(201L, 1, 4, 2),
-                        eventPlayer(202L, 0, 3, 1),
+                        eventPlayer(202L, 0, 1, 1),
                         eventPlayer(203L, 2, 2, 0)
                 )
         );

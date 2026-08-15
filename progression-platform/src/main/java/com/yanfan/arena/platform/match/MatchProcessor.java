@@ -21,6 +21,7 @@ public class MatchProcessor {
 
     private final MatchEventValidator eventValidator;
     private final MatchDomainValidator domainValidator;
+    private final MatchStatisticsValidator statisticsValidator;
     private final MatchProgressionCalculator progressionCalculator;
     private final ProcessedEventRepository processedEventRepository;
     private final MatchResultRepository matchResultRepository;
@@ -28,14 +29,13 @@ public class MatchProcessor {
     private final MatchParticipantResultRepository matchParticipantResultRepository;
     private final TeamRepository teamRepository;
     private final PlayerRepository playerRepository;
-
     // Used only by tests to force a rollback after the inserts
     private boolean failAfterPersist;
 
     @Autowired
     public MatchProcessor(
             MatchEventValidator eventValidator,
-            MatchDomainValidator domainValidator,
+            MatchDomainValidator domainValidator, MatchStatisticsValidator statisticsValidator,
             MatchProgressionCalculator progressionCalculator,
             ProcessedEventRepository processedEventRepository,
             MatchResultRepository matchResultRepository,
@@ -46,6 +46,7 @@ public class MatchProcessor {
     ) {
         this.eventValidator = eventValidator;
         this.domainValidator = domainValidator;
+        this.statisticsValidator = statisticsValidator;
         this.progressionCalculator = progressionCalculator;
         this.processedEventRepository = processedEventRepository;
         this.matchResultRepository = matchResultRepository;
@@ -66,6 +67,11 @@ public class MatchProcessor {
     public MatchProcessingResult process(ArenaMatchCompleted event) {
 
         // Step 1
+        // Structural validation first, so null or missing IDs
+        // throw error and not NullPointerException
+        eventValidator.validate(event);
+
+        // Step 2
         // Idempotency check before processing
         // if either identifier already exists, this transaction is ignored
         String eventId = event.eventId().toString();
@@ -76,15 +82,7 @@ public class MatchProcessor {
             return MatchProcessingResult.duplicate();
         }
 
-        // Step 2
-        // Structural validation: required fields, roster sizes, stats
-        eventValidator.validate(event);
-
         // Step 3
-        // Domain validation: teams exist and both active, rosters are locked etc.
-        domainValidator.validate(event);
-
-        // Step 4
         // Lock both teams in ascending ID order to prevent deadlocks
         long teamAId = event.teams().get(0).teamId();
         long teamBId = event.teams().get(1).teamId();
@@ -101,7 +99,7 @@ public class MatchProcessor {
         Team teamA = firstLockId == teamAId ? firstTeam : secondTeam;
         Team teamB = firstLockId == teamAId ? secondTeam : firstTeam;
 
-        // Step 5
+        // Step 4
         // Collect every player's id from both teams
         List<Long> playerIds = new ArrayList<>();
         for (ArenaMatchCompleted.Team team : event.teams()) {
@@ -125,7 +123,15 @@ public class MatchProcessor {
             throw new MatchEventValidationException("One or more participants do not exist");
         }
 
+        // Step 5
+        // Validate team states
+        domainValidator.validate(event);
+
         // Step 6
+        // Validate statistics consistency
+        statisticsValidator.validate(event);
+
+        // Step 7
         // Calculate every progression value change from the pre-match state
         MatchProcessingResult.ProcessedMatch processed =
                 progressionCalculator.calculate(
@@ -135,7 +141,7 @@ public class MatchProcessor {
                         playersById
                 );
 
-        // Step 7
+        // Step 8
         // Store the idempotency record and all the immutable snapshots
         persistMatch(eventId, matchId, processed);
 
@@ -144,7 +150,7 @@ public class MatchProcessor {
             throw new IllegalStateException("Forced failure after match inserts");
         }
 
-        // Step 8
+        // Step 9
         // Update player's XP and level after the match
         // Entities are managed by transaction,
         // so the changes are flushed automatically
@@ -156,7 +162,7 @@ public class MatchProcessor {
             player.setLevel(playerResult.levelAfter());
         }
 
-        // Step 9
+        // Step 10
         // Update team's stats after the match
         // Entities are managed by transaction,
         // so the changes are flushed automatically
@@ -175,7 +181,7 @@ public class MatchProcessor {
             team.setTotalAssists(teamResult.totalAssistsAfter());
         }
 
-        // Step 10
+        // Step 11
         // Return the summary of changes for later Redis updates
         return new MatchProcessingResult(
                 MatchProcessingResult.MatchProcessingOutcome.PROCESSED,

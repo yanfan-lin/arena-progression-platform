@@ -77,7 +77,7 @@ class MatchProcessorIT {
                 ),
                 eventTeam(2L,
                         eventPlayer(201L, 1, 4, 2),
-                        eventPlayer(202L, 0, 3, 1),
+                        eventPlayer(202L, 0, 1, 1),
                         eventPlayer(203L, 2, 2, 0)
                 )
         );
@@ -147,7 +147,7 @@ class MatchProcessorIT {
         Integer betaDeaths = jdbcTemplate.queryForObject(
                 "SELECT total_deaths FROM teams WHERE team_id = ?", Integer.class, 2L);
         assertThat(betaDeaths)
-                .isEqualTo(9);
+                .isEqualTo(7);
 
         // Return summary for later Redis use
         assertThat(result.processed().teamResults()).hasSize(2);
