@@ -5,11 +5,8 @@ CREATE TABLE team_members
     team_id   BIGINT NOT NULL,
     player_id BIGINT NOT NULL,
     added_at  DATETIME(6) NOT NULL,
-
     CONSTRAINT uk_team_members_team_player UNIQUE (team_id, player_id),
-
     CONSTRAINT fk_team_members_team FOREIGN KEY (team_id) REFERENCES teams (team_id),
-
     CONSTRAINT fk_team_members_player FOREIGN KEY (player_id) REFERENCES players (player_id)
 );
 
