@@ -20,7 +20,7 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
             SELECT count(tm) FROM TeamMember tm
             JOIN Team t ON t.teamId = tm.teamId
             WHERE tm.playerId = :playerId
-              AND t.status = com.yanfan.arena.platform.team.TeamStatus.ACTIVE
+              AND t.status = com.yanfan.arena.platform.team.domain.TeamStatus.ACTIVE
             """)
     long countActiveTeamMemberships(Long playerId);
 
@@ -30,7 +30,7 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
                 ON t.teamId = tm.teamId
                 WHERE tm.playerId IN :playerIds
                 AND t.mode = :mode
-                AND t.status = com.yanfan.arena.platform.team.TeamStatus.ACTIVE
+                AND t.status = com.yanfan.arena.platform.team.domain.TeamStatus.ACTIVE
             """)
     long countActiveMemberships(Collection<Long> playerIds, ArenaMode mode);
 
