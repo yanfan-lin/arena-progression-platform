@@ -47,7 +47,10 @@ public final class EloPolicy {
         // at their current rating
         int appliedChange = (int) Math.min(calculatedChange, loserRating);
 
-        return new RatingChange(winnerRating + appliedChange, loserRating - appliedChange);
+        return new RatingChange(
+                Math.addExact(winnerRating, appliedChange),
+                Math.addExact(loserRating, -appliedChange)
+        );
 
     }
 

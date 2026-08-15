@@ -29,10 +29,14 @@ public class MatchProgressionCalculator {
         boolean teamAWon = teamA.getTeamId() == event.winnerTeamId();
 
         // Calculate new rating for both teams after the match
-        EloPolicy.RatingChange ratingChange = EloPolicy.calculate(
-                teamAWon ? teamA.getRating() : teamB.getRating(),
-                teamAWon ? teamB.getRating() : teamA.getRating()
-        );
+        EloPolicy.RatingChange ratingChange;
+        try {
+            ratingChange = EloPolicy.calculate(
+                    teamAWon ? teamA.getRating() : teamB.getRating(),
+                    teamAWon ? teamB.getRating() : teamA.getRating());
+        } catch (ArithmeticException e) {
+            throw new MatchEventValidationException("Elo rating would overflow");
+        }
 
         // Build the team results for both teams
         List<MatchProcessingResult.TeamResult> teamResults = new ArrayList<>();
@@ -58,7 +62,9 @@ public class MatchProgressionCalculator {
                 Player player = playersById.get(participant.playerId());
 
                 long xpEarned = XpPolicy.xpEarned(won);
-                long totalXpAfter = player.getTotalXp() + xpEarned;
+                long totalXpAfter = addXp(player.getTotalXp(), xpEarned);
+
+                ensureLevelFits(totalXpAfter);
 
                 // Keep player's stats as a snapshot for history
                 playerResults.add(new MatchProcessingResult.PlayerResult(
@@ -107,6 +113,14 @@ public class MatchProgressionCalculator {
             assists += participant.assists();
         }
 
+        // Compute the updated stats after the match
+        int matchesPlayedAfter = addStat(team.getMatchesPlayed(), 1);
+        int winsAfter = addStat(team.getWins(), won ? 1 : 0);
+        int lossesAfter = addStat(team.getLosses(), won ? 0 : 1);
+        int totalKillsAfter = addStat(team.getTotalKills(), kills);
+        int totalDeathsAfter = addStat(team.getTotalDeaths(), deaths);
+        int totalAssistsAfter = addStat(team.getTotalAssists(), assists);
+
         // Return the updated team results
         return new MatchProcessingResult.TeamResult(
                 team.getTeamId(),
@@ -114,12 +128,12 @@ public class MatchProgressionCalculator {
                 ratingBefore,
                 ratingAfter - ratingBefore,
                 ratingAfter,
-                team.getMatchesPlayed() + 1,
-                team.getWins() + (won ? 1 : 0),
-                team.getLosses() + (won ? 0 : 1),
-                team.getTotalKills() + kills,
-                team.getTotalDeaths() + deaths,
-                team.getTotalAssists() + assists
+                matchesPlayedAfter,
+                winsAfter,
+                lossesAfter,
+                totalKillsAfter,
+                totalDeathsAfter,
+                totalAssistsAfter
         );
 
     }
@@ -130,5 +144,32 @@ public class MatchProgressionCalculator {
             case FIVE_VS_FIVE -> ArenaMode.FIVE_VS_FIVE;
         };
     }
+
+
+    // Reject XP that would overflow the cumulative long total
+    private long addXp(long currentXp, long xpEarned) {
+        if (currentXp > Long.MAX_VALUE - xpEarned) {
+            throw new MatchEventValidationException("Player XP would overflow");
+        }
+
+        return currentXp + xpEarned;
+    }
+
+    // Reject team statistics that would overflow the cumulative int total
+    private int addStat(int currentValue, int addedValue) {
+        if (currentValue > Integer.MAX_VALUE - addedValue) {
+            throw new MatchEventValidationException("Team statistic would overflow");
+        }
+
+        return currentValue + addedValue;
+    }
+
+    // Level is stored as INT, so reject XP that would push it past Integer.MAX_VALUE
+    private void ensureLevelFits(long totalXp) {
+        if (totalXp / XpPolicy.XP_PER_LEVEL > Integer.MAX_VALUE - 1L) {
+            throw new MatchEventValidationException("Player level would overflow");
+        }
+    }
+
 
 }

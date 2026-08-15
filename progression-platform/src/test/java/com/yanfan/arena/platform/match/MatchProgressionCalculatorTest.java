@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -208,6 +209,106 @@ class MatchProgressionCalculatorTest {
         assertThat(betaOneResult.xpEarned()).isEqualTo(100);
         assertThat(betaOneResult.totalXpAfter()).isEqualTo(600);
         assertThat(betaOneResult.levelAfter()).isEqualTo(1);
+    }
+
+    // Reject XP that would overflow the cumulative long total
+    @Test
+    void rejectsPlayerXpOverflow() {
+        Team teamA = team(1L, "Alpha", 1000, 0, 0, 0, 0, 0, 0);
+        Team teamB = team(2L, "Beta", 1000, 0, 0, 0, 0, 0, 0);
+
+        Player maxXp = player("MaxXp", Long.MAX_VALUE - 100L);
+
+        ArenaMatchCompleted event = event(1L,
+                eventTeam(1L,
+                        eventPlayer(101L, 0, 0, 0),
+                        eventPlayer(102L, 0, 0, 0),
+                        eventPlayer(103L, 0, 0, 0)),
+                eventTeam(2L,
+                        eventPlayer(201L, 0, 0, 0),
+                        eventPlayer(202L, 0, 0, 0),
+                        eventPlayer(203L, 0, 0, 0)));
+
+        assertThatThrownBy(() -> calculator.calculate(event, teamA, teamB,
+                Map.of(101L, maxXp, 102L, player("A2", 500L), 103L, player("A3", 500L),
+                        201L, player("B1", 500L), 202L, player("B2", 500L),
+                        203L, player("B3", 500L))))
+                .isInstanceOf(MatchEventValidationException.class)
+                .hasMessageContaining("XP");
+    }
+
+    // Reject team statistics that would overflow the cumulative int total
+    @Test
+    void rejectsTeamStatOverflow() {
+        Team teamA = team(1L, "Alpha", 1000, Integer.MAX_VALUE, 0, 0, 0, 0, 0);
+        Team teamB = team(2L, "Beta", 1000, 0, 0, 0, 0, 0, 0);
+
+        ArenaMatchCompleted event = event(1L,
+                eventTeam(1L,
+                        eventPlayer(101L, 0, 0, 0),
+                        eventPlayer(102L, 0, 0, 0),
+                        eventPlayer(103L, 0, 0, 0)),
+                eventTeam(2L,
+                        eventPlayer(201L, 0, 0, 0),
+                        eventPlayer(202L, 0, 0, 0),
+                        eventPlayer(203L, 0, 0, 0)));
+
+        assertThatThrownBy(() -> calculator.calculate(event, teamA, teamB,
+                Map.of(101L, player("A1", 500L), 102L, player("A2", 500L),
+                        103L, player("A3", 500L), 201L, player("B1", 500L),
+                        202L, player("B2", 500L), 203L, player("B3", 500L))))
+                .isInstanceOf(MatchEventValidationException.class)
+                .hasMessageContaining("statistic");
+    }
+
+    // Reject XP that would push the derived level past Integer.MAX_VALUE
+    @Test
+    void rejectsLevelOverflow() {
+        Team teamA = team(1L, "Alpha", 1000, 0, 0, 0, 0, 0, 0);
+        Team teamB = team(2L, "Beta", 1000, 0, 0, 0, 0, 0, 0);
+
+        Player hugeXp = player("HugeXp", Integer.MAX_VALUE * 1000L);
+
+        ArenaMatchCompleted event = event(1L,
+                eventTeam(1L,
+                        eventPlayer(101L, 0, 0, 0),
+                        eventPlayer(102L, 0, 0, 0),
+                        eventPlayer(103L, 0, 0, 0)),
+                eventTeam(2L,
+                        eventPlayer(201L, 0, 0, 0),
+                        eventPlayer(202L, 0, 0, 0),
+                        eventPlayer(203L, 0, 0, 0)));
+
+        assertThatThrownBy(() -> calculator.calculate(event, teamA, teamB,
+                Map.of(101L, hugeXp, 102L, player("A2", 500L), 103L, player("A3", 500L),
+                        201L, player("B1", 500L), 202L, player("B2", 500L),
+                        203L, player("B3", 500L))))
+                .isInstanceOf(MatchEventValidationException.class)
+                .hasMessageContaining("level");
+    }
+
+    // Reject Elo ratings that would overflow when the rating change is applied
+    @Test
+    void rejectsEloOverflow() {
+        Team teamA = team(1L, "Alpha", Integer.MAX_VALUE, 0, 0, 0, 0, 0, 0);
+        Team teamB = team(2L, "Beta", Integer.MAX_VALUE, 0, 0, 0, 0, 0, 0);
+
+        ArenaMatchCompleted event = event(1L,
+                eventTeam(1L,
+                        eventPlayer(101L, 0, 0, 0),
+                        eventPlayer(102L, 0, 0, 0),
+                        eventPlayer(103L, 0, 0, 0)),
+                eventTeam(2L,
+                        eventPlayer(201L, 0, 0, 0),
+                        eventPlayer(202L, 0, 0, 0),
+                        eventPlayer(203L, 0, 0, 0)));
+
+        assertThatThrownBy(() -> calculator.calculate(event, teamA, teamB,
+                Map.of(101L, player("A1", 500L), 102L, player("A2", 500L),
+                        103L, player("A3", 500L), 201L, player("B1", 500L),
+                        202L, player("B2", 500L), 203L, player("B3", 500L))))
+                .isInstanceOf(MatchEventValidationException.class)
+                .hasMessageContaining("Elo");
     }
 
     // Build a Team with the state before a match
