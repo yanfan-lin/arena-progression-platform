@@ -1,4 +1,4 @@
-package com.yanfan.arena.platform.common;
+package com.yanfan.arena.platform.error;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.*;

@@ -1,4 +1,4 @@
-package com.yanfan.arena.platform.common;
+package com.yanfan.arena.platform.config;
 
 import java.time.Clock;
 

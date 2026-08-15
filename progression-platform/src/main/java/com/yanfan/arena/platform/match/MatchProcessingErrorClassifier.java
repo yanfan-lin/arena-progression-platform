@@ -1,6 +1,6 @@
 package com.yanfan.arena.platform.match;
 
-import com.yanfan.arena.platform.common.ApiException;
+import com.yanfan.arena.platform.error.ApiException;
 import org.springframework.stereotype.Component;
 
 // Decide whether a match-processing failure is permanent or retryable.

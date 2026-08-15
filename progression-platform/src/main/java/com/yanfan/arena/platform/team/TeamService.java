@@ -1,7 +1,7 @@
 package com.yanfan.arena.platform.team;
 
-import com.yanfan.arena.platform.common.ConflictException;
-import com.yanfan.arena.platform.common.ResourceNotFoundException;
+import com.yanfan.arena.platform.error.ConflictException;
+import com.yanfan.arena.platform.error.ResourceNotFoundException;
 import com.yanfan.arena.platform.player.Player;
 import com.yanfan.arena.platform.player.PlayerRepository;
 import com.yanfan.arena.platform.player.PlayerStatus;

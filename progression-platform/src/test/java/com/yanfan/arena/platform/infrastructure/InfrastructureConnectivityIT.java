@@ -1,4 +1,4 @@
-package com.yanfan.arena.platform;
+package com.yanfan.arena.platform.infrastructure;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;

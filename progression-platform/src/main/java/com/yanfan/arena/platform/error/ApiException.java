@@ -1,4 +1,4 @@
-package com.yanfan.arena.platform.common;
+package com.yanfan.arena.platform.error;
 
 // Base class for errors that map to a specific HTTP status.
 public abstract class ApiException extends RuntimeException {

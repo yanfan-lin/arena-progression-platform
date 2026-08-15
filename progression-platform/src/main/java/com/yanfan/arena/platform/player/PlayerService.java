@@ -1,7 +1,7 @@
 package com.yanfan.arena.platform.player;
 
-import com.yanfan.arena.platform.common.ConflictException;
-import com.yanfan.arena.platform.common.ResourceNotFoundException;
+import com.yanfan.arena.platform.error.ConflictException;
+import com.yanfan.arena.platform.error.ResourceNotFoundException;
 import com.yanfan.arena.platform.team.TeamMemberRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
