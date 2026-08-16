@@ -107,7 +107,7 @@ class MatchEventListenerTest {
 
         verifyNoInteractions(matchProcessor);
     }
-    
+
     private ArenaMatchCompleted validEvent() {
         return eventWithMatchId(UUID.fromString("0775a8e0-cd3a-4d03-a9d4-62a43fc09d86"));
     }
