@@ -112,7 +112,7 @@ public class MatchEventDltIT {
     }
 
     @Test
-    void permanentBusinessFailureIsPublishedToDlt() throws Exception {
+    void permanentMatchFailureIsPublishedToDlt() throws Exception {
         seedPlayersAndTeams();
 
         ArenaMatchCompleted event = MatchProcessorTestData.event(

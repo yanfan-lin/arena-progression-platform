@@ -80,12 +80,43 @@ class MatchEventListenerTest {
         verifyNoInteractions(matchProcessor);
     }
 
-    // Build a valid 3v3 event where team 1 wins
+    @Test
+    void nullEventIsRejectedBeforeProcessing() {
+        assertThrows(MatchEventValidationException.class,
+                () -> listener.onMatchEvent(new ConsumerRecord<>(
+                        "arena-match-completed",
+                        0,
+                        0L,
+                        "some-key",
+                        null)));
+
+        verifyNoInteractions(matchProcessor);
+    }
+
+    @Test
+    void nullMatchIdIsRejectedBeforeProcessing() {
+        ArenaMatchCompleted event = eventWithMatchId(null);
+
+        assertThrows(MatchEventValidationException.class,
+                () -> listener.onMatchEvent(new ConsumerRecord<>(
+                        "arena-match-completed",
+                        0,
+                        0L,
+                        "some-key",
+                        event)));
+
+        verifyNoInteractions(matchProcessor);
+    }
+    
     private ArenaMatchCompleted validEvent() {
+        return eventWithMatchId(UUID.fromString("0775a8e0-cd3a-4d03-a9d4-62a43fc09d86"));
+    }
+
+    private ArenaMatchCompleted eventWithMatchId(UUID matchId) {
         return new ArenaMatchCompleted(
                 ArenaMatchCompleted.CONTRACT_VERSION,
                 UUID.fromString("4e74866d-5a18-4695-bf5e-ff8b79226b79"),
-                UUID.fromString("0775a8e0-cd3a-4d03-a9d4-62a43fc09d86"),
+                matchId,
                 MatchMode.THREE_VS_THREE,
                 Instant.now(),
                 1L,

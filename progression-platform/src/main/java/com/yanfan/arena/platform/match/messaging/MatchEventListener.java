@@ -30,6 +30,16 @@ public class MatchEventListener {
         // The value is a completed match event
         ArenaMatchCompleted event = record.value();
 
+        // Reject a missing event before reading its fields
+        if (event == null) {
+            throw new MatchEventValidationException("Match event is missing");
+        }
+
+        // Reject a missing match ID before comparing it to the Kafka key
+        if (event.matchId() == null) {
+            throw new MatchEventValidationException("Match event ID is missing");
+        }
+
         // Reject a record whose key does not match the event ID
         if (!event.matchId().toString().equals(record.key())) {
             throw new MatchEventValidationException("Kafka key does not match the match event ID");
