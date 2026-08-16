@@ -1,0 +1,10 @@
+# Keep ordinary tests independent of Kafka,
+# existing tests boot the context without starting a broker
+spring:
+  kafka:
+    listener:
+      # Do not start Kafka listeners in tests that don't test Kafka
+      auto-startup: false
+    admin:
+      # Do not try to create topics against a missing broker
+      auto-create: false
