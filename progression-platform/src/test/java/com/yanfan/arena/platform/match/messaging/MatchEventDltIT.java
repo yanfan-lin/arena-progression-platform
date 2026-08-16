@@ -10,6 +10,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -67,6 +68,18 @@ public class MatchEventDltIT {
 
     @Autowired
     ObjectMapper objectMapper;
+
+    // Clear the database before the test
+    @BeforeEach
+    void cleanDatabase() {
+        jdbcTemplate.update("DELETE FROM match_participant_results");
+        jdbcTemplate.update("DELETE FROM matches");
+        jdbcTemplate.update("DELETE FROM match_team_results");
+        jdbcTemplate.update("DELETE FROM processed_events");
+        jdbcTemplate.update("DELETE FROM team_members");
+        jdbcTemplate.update("DELETE FROM teams");
+        jdbcTemplate.update("DELETE FROM players");
+    }
 
     @Test
     void malformedJsonIsPublishedToDlt() throws Exception {
@@ -147,11 +160,88 @@ public class MatchEventDltIT {
         assertThat(new String(originalTopic, StandardCharsets.UTF_8))
                 .isEqualTo("arena-match-completed");
 
+        // The original partition and offset are also recorded as headers
+        assertThat(dltRecord.headers().lastHeader(KafkaHeaders.DLT_ORIGINAL_PARTITION))
+                .isNotNull();
+        assertThat(dltRecord.headers().lastHeader(KafkaHeaders.DLT_ORIGINAL_OFFSET))
+                .isNotNull();
+
         // Database stays unchanged because the event failed
         assertThat(MatchProcessorTestData.countRows(jdbcTemplate, "processed_events"))
                 .isZero();
         assertThat(MatchProcessorTestData.countRows(jdbcTemplate, "matches"))
                 .isZero();
+    }
+
+    @Test
+    void consumerContinuesAfterPermanentFailure() throws Exception {
+        seedPlayersAndTeams();
+
+        // Publish an event that fails permanently
+        ArenaMatchCompleted badEvent = threeVsThreeEvent(
+                UUID.fromString("5f8b9a0a-6b3d-4e5f-8f1a-111111111111"),
+                UUID.fromString("5f8b9a0a-6b3d-4e5f-8f1a-222222222222"),
+                999L);
+
+        kafkaTemplate.send("arena-match-completed",
+                        badEvent.matchId().toString(),
+                        objectMapper.writeValueAsString(badEvent))
+                .get(10, TimeUnit.SECONDS);
+
+        // Wait until the bad event is routed to the dead-letter topic
+        awaitDltRecord(badEvent.matchId().toString());
+
+        // Publish a valid event to prove the listener keeps consuming
+        ArenaMatchCompleted goodEvent = threeVsThreeEvent(
+                UUID.fromString("3d2f1c0b-1a2b-3c4d-5e6f-7890abcdef01"),
+                UUID.fromString("3d2f1c0b-1a2b-3c4d-5e6f-7890abcdef02"),
+                1L);
+
+        kafkaTemplate.send("arena-match-completed",
+                        goodEvent.matchId().toString(),
+                        objectMapper.writeValueAsString(goodEvent))
+                .get(10, TimeUnit.SECONDS);
+
+        // Wait for the valid event to be committed
+        awaitProcessedCount(1);
+
+        assertThat(MatchProcessorTestData.countRows(jdbcTemplate, "matches"))
+                .isEqualTo(1);
+    }
+
+    private ArenaMatchCompleted threeVsThreeEvent(UUID eventId, UUID matchId, long winnerTeamId) {
+        return MatchProcessorTestData.event(
+                eventId,
+                matchId,
+                winnerTeamId,
+                MatchMode.THREE_VS_THREE,
+                MatchProcessorTestData.eventTeam(1L,
+                        MatchProcessorTestData.eventPlayer(101L, 5, 2, 3),
+                        MatchProcessorTestData.eventPlayer(102L, 2, 1, 1),
+                        MatchProcessorTestData.eventPlayer(103L, 0, 0, 0)),
+                MatchProcessorTestData.eventTeam(2L,
+                        MatchProcessorTestData.eventPlayer(201L, 1, 4, 2),
+                        MatchProcessorTestData.eventPlayer(202L, 0, 1, 1),
+                        MatchProcessorTestData.eventPlayer(203L, 2, 2, 0)));
+    }
+
+    // Poll until the listener has committed the expected number of events
+    private void awaitProcessedCount(int expected) throws InterruptedException {
+        long deadline = System.currentTimeMillis() + 15_000;
+
+        while (System.currentTimeMillis() < deadline) {
+            Integer count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM processed_events", Integer.class);
+
+            if (count != null && count == expected) {
+                return;
+            }
+
+            Thread.sleep(200);
+        }
+
+        assertThat(MatchProcessorTestData.countRows(jdbcTemplate, "processed_events"))
+                .isEqualTo(expected);
     }
 
     // Insert the teams and players needed to pass structural validation

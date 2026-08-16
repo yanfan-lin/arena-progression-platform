@@ -60,7 +60,7 @@ class MatchEventListenerIT {
 
 
     @Test
-    void validKafkaEventIsProcessedExactlyOnce() throws Exception {
+    void validKafkaEventCommitsOneMatch() throws Exception {
 
         MatchProcessorTestData.insertPlayer(jdbcTemplate, 101L, "AlphaOne", 500L);
         MatchProcessorTestData.insertPlayer(jdbcTemplate, 102L, "AlphaTwo", 900L);
