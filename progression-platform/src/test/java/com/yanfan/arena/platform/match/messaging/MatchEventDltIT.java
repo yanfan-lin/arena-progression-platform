@@ -1,5 +1,9 @@
 package com.yanfan.arena.platform.match.messaging;
 
+import com.yanfan.arena.contract.ArenaMatchCompleted;
+import com.yanfan.arena.contract.MatchMode;
+import com.yanfan.arena.platform.match.processing.MatchProcessorTestData;
+import com.yanfan.arena.platform.team.domain.ArenaMode;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -19,16 +23,18 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
+import tools.jackson.databind.ObjectMapper;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// Verify that malformed JSON goes to DLT
+// Verify that permanent match failures are routed to the dead-letter topic.
 @Testcontainers
 @SpringBootTest(properties = {
         "spring.kafka.listener.auto-startup=true",
@@ -59,6 +65,9 @@ public class MatchEventDltIT {
     @Autowired
     JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    ObjectMapper objectMapper;
+
     @Test
     void malformedJsonIsPublishedToDlt() throws Exception {
         String badJson = "{not-valid-json";
@@ -66,16 +75,20 @@ public class MatchEventDltIT {
         kafkaTemplate.send("arena-match-completed", "bad-key", badJson)
                 .get(10, TimeUnit.SECONDS);
 
-        ConsumerRecord<String, byte[]> dltRecord = awaitDltRecord();
+        ConsumerRecord<String, byte[]> dltRecord = awaitDltRecord("bad-key");
 
         // Original key is preserved
-        assertThat(dltRecord.key()).isEqualTo("bad-key");
+        assertThat(dltRecord.key())
+                .isEqualTo("bad-key");
 
         // Original raw bytes is preserved
-        assertThat(new String(dltRecord.value(), StandardCharsets.UTF_8)).isEqualTo(badJson);
+        assertThat(new String(dltRecord.value(), StandardCharsets.UTF_8))
+                .isEqualTo(badJson);
 
         // Original topic is recorded as a header
-        byte[] originalTopic = dltRecord.headers().lastHeader(KafkaHeaders.DLT_ORIGINAL_TOPIC).value();
+        byte[] originalTopic = dltRecord.headers()
+                .lastHeader(KafkaHeaders.DLT_ORIGINAL_TOPIC)
+                .value();
 
         assertThat(new String(originalTopic, StandardCharsets.UTF_8))
                 .isEqualTo("arena-match-completed");
@@ -85,7 +98,83 @@ public class MatchEventDltIT {
                 .isZero();
     }
 
-    private ConsumerRecord<String, byte[]> awaitDltRecord() throws Exception {
+    @Test
+    void permanentBusinessFailureIsPublishedToDlt() throws Exception {
+        seedPlayersAndTeams();
+
+        ArenaMatchCompleted event = MatchProcessorTestData.event(
+                UUID.fromString("5f8b9a0a-6b3d-4e5f-8f1a-111111111111"),
+                UUID.fromString("5f8b9a0a-6b3d-4e5f-8f1a-222222222222"),
+                // This winner is not one of the two teams, so processing fails permanently
+                999L,
+                MatchMode.THREE_VS_THREE,
+                MatchProcessorTestData.eventTeam(1L,
+                        MatchProcessorTestData.eventPlayer(101L, 5, 2, 3),
+                        MatchProcessorTestData.eventPlayer(102L, 2, 1, 1),
+                        MatchProcessorTestData.eventPlayer(103L, 0, 0, 0)),
+                MatchProcessorTestData.eventTeam(2L,
+                        MatchProcessorTestData.eventPlayer(201L, 1, 4, 2),
+                        MatchProcessorTestData.eventPlayer(202L, 0, 1, 1),
+                        MatchProcessorTestData.eventPlayer(203L, 2, 2, 0)));
+
+        // Publish the valid event to the normal match-completed topic
+        String json = objectMapper.writeValueAsString(event);
+        kafkaTemplate.send("arena-match-completed", event.matchId().toString(), json)
+                .get(10, TimeUnit.SECONDS);
+
+        // Find the DLT record for this specific match ID
+        ConsumerRecord<String, byte[]> dltRecord = awaitDltRecord(event.matchId().toString());
+
+        // The original Kafka key is preserved
+        assertThat(dltRecord.key())
+                .isEqualTo(event.matchId().toString());
+
+        // The DLT contains the same typed event that failed processing
+        String publishedJson = new String(dltRecord.value(), StandardCharsets.UTF_8);
+        ArenaMatchCompleted publishedEvent = objectMapper.readValue(publishedJson, ArenaMatchCompleted.class);
+
+        assertThat(publishedEvent.eventId())
+                .isEqualTo(event.eventId());
+
+        assertThat(publishedEvent.winnerTeamId())
+                .isEqualTo(999L);
+
+        // The original topic is recorded as a header
+        byte[] originalTopic = dltRecord.headers()
+                .lastHeader(KafkaHeaders.DLT_ORIGINAL_TOPIC)
+                .value();
+
+        assertThat(new String(originalTopic, StandardCharsets.UTF_8))
+                .isEqualTo("arena-match-completed");
+
+        // Database stays unchanged because the event failed
+        assertThat(MatchProcessorTestData.countRows(jdbcTemplate, "processed_events"))
+                .isZero();
+        assertThat(MatchProcessorTestData.countRows(jdbcTemplate, "matches"))
+                .isZero();
+    }
+
+    // Insert the teams and players needed to pass structural validation
+    private void seedPlayersAndTeams() {
+        MatchProcessorTestData.insertPlayer(jdbcTemplate, 101L, "AlphaOne", 500L);
+        MatchProcessorTestData.insertPlayer(jdbcTemplate, 102L, "AlphaTwo", 900L);
+        MatchProcessorTestData.insertPlayer(jdbcTemplate, 103L, "AlphaThree", 0L);
+        MatchProcessorTestData.insertPlayer(jdbcTemplate, 201L, "BetaOne", 500L);
+        MatchProcessorTestData.insertPlayer(jdbcTemplate, 202L, "BetaTwo", 500L);
+        MatchProcessorTestData.insertPlayer(jdbcTemplate, 203L, "BetaThree", 500L);
+
+        MatchProcessorTestData.insertTeam(jdbcTemplate, 1L, "Alpha", ArenaMode.THREE_VS_THREE, 1000);
+        MatchProcessorTestData.insertTeam(jdbcTemplate, 2L, "Beta", ArenaMode.THREE_VS_THREE, 1000);
+
+        MatchProcessorTestData.addMember(jdbcTemplate, 1L, 101L);
+        MatchProcessorTestData.addMember(jdbcTemplate, 1L, 102L);
+        MatchProcessorTestData.addMember(jdbcTemplate, 1L, 103L);
+        MatchProcessorTestData.addMember(jdbcTemplate, 2L, 201L);
+        MatchProcessorTestData.addMember(jdbcTemplate, 2L, 202L);
+        MatchProcessorTestData.addMember(jdbcTemplate, 2L, 203L);
+    }
+
+    private ConsumerRecord<String, byte[]> awaitDltRecord(String expectedKey) throws Exception {
 
         // Throwaway consumer that reads the DLT
         Map<String, Object> consumerConfig = Map.of(
@@ -101,7 +190,7 @@ public class MatchEventDltIT {
 
         ConsumerRecord<String, byte[]> found = null;
 
-        // Give 15 sec for Kafka to deliver DLT record
+        // Give Kafka 15 seconds to deliver DLT record
         long deadline = System.currentTimeMillis() + 15_000;
 
         while (System.currentTimeMillis() < deadline) {
@@ -109,9 +198,11 @@ public class MatchEventDltIT {
             ConsumerRecords<String, byte[]> records = consumer.poll(Duration.ofSeconds(1));
 
             for (ConsumerRecord<String, byte[]> record : records) {
-                // Spring's DLT recoverer adds this header, so it identifies a real DLT record.
-                if (record.headers().lastHeader(KafkaHeaders.DLT_ORIGINAL_TOPIC) != null) {
+                // Match the expected key and confirm Spring added the original-topic header.
+                if (expectedKey.equals(record.key())
+                        && record.headers().lastHeader(KafkaHeaders.DLT_ORIGINAL_TOPIC) != null) {
                     found = record;
+
                     break;
                 }
             }
@@ -129,6 +220,4 @@ public class MatchEventDltIT {
 
         return found;
     }
-
-
 }
