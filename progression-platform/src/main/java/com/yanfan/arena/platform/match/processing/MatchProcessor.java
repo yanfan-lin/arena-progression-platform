@@ -44,7 +44,8 @@ public class MatchProcessor {
     private final TeamRepository teamRepository;
     private final PlayerRepository playerRepository;
     // Used only by tests to force a rollback right before the commit
-    private boolean failBeforeCommit;
+    // Volatile because the Kafka listener reads it from a different thread.
+    private volatile boolean failBeforeCommit;
 
     @Autowired
     public MatchProcessor(
