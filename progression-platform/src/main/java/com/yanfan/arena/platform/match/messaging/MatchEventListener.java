@@ -4,6 +4,7 @@ import com.yanfan.arena.contract.ArenaMatchCompleted;
 import com.yanfan.arena.contract.KafkaTopics;
 import com.yanfan.arena.platform.match.processing.MatchProcessingResult;
 import com.yanfan.arena.platform.match.processing.MatchProcessor;
+import com.yanfan.arena.platform.match.validation.MatchEventValidationException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +29,11 @@ public class MatchEventListener {
     public void onMatchEvent(ConsumerRecord<String, ArenaMatchCompleted> record) {
         // The value is a completed match event
         ArenaMatchCompleted event = record.value();
+
+        // Reject a record whose key does not match the event ID
+        if (!event.matchId().toString().equals(record.key())) {
+            throw new MatchEventValidationException("Kafka key does not match the match event ID");
+        }
 
         // Pass the event to the processor
         MatchProcessingResult result = matchProcessor.process(event);
