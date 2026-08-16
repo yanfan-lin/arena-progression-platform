@@ -1,5 +1,7 @@
 package com.yanfan.arena.platform.config;
 
+import com.yanfan.arena.platform.match.error.MatchProcessingErrorClassifier;
+import com.yanfan.arena.platform.match.error.MatchProcessingErrorType;
 import org.springframework.boot.kafka.autoconfigure.ConcurrentKafkaListenerContainerFactoryConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,7 +22,8 @@ public class KafkaListenerConfig {
     ConcurrentKafkaListenerContainerFactory<Object, Object> kafkaListenerContainerFactory(
             ConcurrentKafkaListenerContainerFactoryConfigurer configurer,
             ConsumerFactory<Object, Object> consumerFactory,
-            KafkaTemplate<String, Object> dltKafkaTemplate) {
+            KafkaTemplate<String, Object> dltKafkaTemplate,
+            MatchProcessingErrorClassifier errorClassifier) {
 
         ConcurrentKafkaListenerContainerFactory<Object, Object> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
@@ -32,16 +35,22 @@ public class KafkaListenerConfig {
         // Advance the offset only after the DLT write succeeds
         dltRecoverer.setFailIfSendResultIsError(true);
 
-        // Route only malformed records to the DLT.
+        // Malformed JSON is published as raw bytes because it cannot be deserialized
         DefaultErrorHandler errorHandler = new DefaultErrorHandler(
-                (record, exception) -> {
+                (record, exception) ->
+                {
                     if (isDeserializationException(exception)) {
                         dltRecoverer.accept(record, exception);
+                    } else if (errorClassifier.classify(exception) == MatchProcessingErrorType.PERMANENT) {
+                        // Permanent errors are published as typed ArenaMatchCompleted records
+                        dltRecoverer.accept(record, exception);
                     } else {
-                        throw new KafkaException("Only malformed Kafka records are published to the dead-letter topic", exception);
+                        // Retryable failures should not be sent to the DLT
+                        throw new KafkaException("Retryable Kafka failures are not handled yet", exception);
                     }
                 },
-                new FixedBackOff(0L, 0L));
+                new FixedBackOff(0L, 0L)
+        );
 
         factory.setCommonErrorHandler(errorHandler);
 
@@ -53,8 +62,10 @@ public class KafkaListenerConfig {
             if (throwable instanceof DeserializationException) {
                 return true;
             }
+
             throwable = throwable.getCause();
         }
+
         return false;
     }
 

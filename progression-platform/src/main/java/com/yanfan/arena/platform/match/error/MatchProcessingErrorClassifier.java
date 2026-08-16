@@ -10,8 +10,14 @@ public class MatchProcessingErrorClassifier {
     // Treat API errors as permanent because retrying the same event would not fix them.
     // Treat unexpected failures as retryable.
     public MatchProcessingErrorType classify(Throwable error) {
-        if (error instanceof ApiException) {
-            return MatchProcessingErrorType.PERMANENT;
+        Throwable current = error;
+
+        while (current != null) {
+            if (current instanceof ApiException) {
+                return MatchProcessingErrorType.PERMANENT;
+            }
+
+            current = current.getCause();
         }
 
         return MatchProcessingErrorType.RETRYABLE;
