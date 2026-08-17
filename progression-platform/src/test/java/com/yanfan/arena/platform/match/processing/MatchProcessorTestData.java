@@ -84,6 +84,17 @@ public final class MatchProcessorTestData {
         addMember(jdbcTemplate, 2L, 203L);
     }
 
+    // Clear match, team, and player data for the tests
+    public static void clearMatchTestData(JdbcTemplate jdbcTemplate) {
+        jdbcTemplate.update("DELETE FROM match_participant_results");
+        jdbcTemplate.update("DELETE FROM matches");
+        jdbcTemplate.update("DELETE FROM match_team_results");
+        jdbcTemplate.update("DELETE FROM processed_events");
+        jdbcTemplate.update("DELETE FROM team_members");
+        jdbcTemplate.update("DELETE FROM teams");
+        jdbcTemplate.update("DELETE FROM players");
+    }
+
     // Insert an ACTIVE player with the given XP and the matching level
     public static void insertPlayer(JdbcTemplate jdbcTemplate, long playerId, String displayName, long totalXp) {
         jdbcTemplate.update(

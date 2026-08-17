@@ -68,13 +68,7 @@ public class MatchEventDltIT {
     // Clear the database before the test
     @BeforeEach
     void cleanDatabase() {
-        jdbcTemplate.update("DELETE FROM match_participant_results");
-        jdbcTemplate.update("DELETE FROM matches");
-        jdbcTemplate.update("DELETE FROM match_team_results");
-        jdbcTemplate.update("DELETE FROM processed_events");
-        jdbcTemplate.update("DELETE FROM team_members");
-        jdbcTemplate.update("DELETE FROM teams");
-        jdbcTemplate.update("DELETE FROM players");
+        MatchProcessorTestData.clearMatchTestData(jdbcTemplate);
     }
 
     @Test
@@ -90,7 +84,7 @@ public class MatchEventDltIT {
         assertThat(dltRecord.key())
                 .isEqualTo("bad-key");
 
-        // Original raw bytes is preserved
+        // Original raw bytes are preserved
         assertThat(new String(dltRecord.value(), StandardCharsets.UTF_8))
                 .isEqualTo(badJson);
 
