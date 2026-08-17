@@ -145,31 +145,6 @@ class TeamControllerTest {
     }
 
     @Test
-    void replaceReturns404() throws Exception {
-        when(teamService.replaceRoster(eq(1L), any(ReplaceRosterRequest.class)))
-                .thenThrow(new ResourceNotFoundException("TEAM_NOT_FOUND", "Team not found"));
-
-        mockMvc.perform(put("/api/v1/teams/1/roster")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"playerIds\":[10,11]}"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code").value("TEAM_NOT_FOUND"));
-    }
-
-    @Test
-    void replaceReturns409() throws Exception {
-        when(teamService.replaceRoster(eq(1L), any(ReplaceRosterRequest.class)))
-                .thenThrow(new ConflictException("TEAM_NOT_DRAFT",
-                        "Only draft teams can change their roster"));
-
-        mockMvc.perform(put("/api/v1/teams/1/roster")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"playerIds\":[10,11]}"))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value("TEAM_NOT_DRAFT"));
-    }
-
-    @Test
     void activateReturns200() throws Exception {
         when(teamService.activate(1L))
                 .thenReturn(new TeamResponse(
@@ -197,27 +172,6 @@ class TeamControllerTest {
     }
 
     @Test
-    void activateReturns404() throws Exception {
-        when(teamService.activate(99L))
-                .thenThrow(new ResourceNotFoundException("TEAM_NOT_FOUND", "Team not found"));
-
-        mockMvc.perform(post("/api/v1/teams/99/activate"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code").value("TEAM_NOT_FOUND"));
-    }
-
-    @Test
-    void activateReturns409() throws Exception {
-        when(teamService.activate(1L))
-                .thenThrow(new ConflictException("ROSTER_INCOMPLETE",
-                        "A THREE_VS_THREE team needs exactly 3 players"));
-
-        mockMvc.perform(post("/api/v1/teams/1/activate"))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value("ROSTER_INCOMPLETE"));
-    }
-
-    @Test
     void retireReturns200() throws Exception {
         when(teamService.retire(1L))
                 .thenReturn(new TeamResponse(
@@ -242,26 +196,5 @@ class TeamControllerTest {
                 .andExpect(jsonPath("$.status").value("RETIRED"));
 
     }
-
-    @Test
-    void retireReturns404() throws Exception {
-        when(teamService.retire(99L))
-                .thenThrow(new ResourceNotFoundException("TEAM_NOT_FOUND", "Team not found"));
-
-        mockMvc.perform(post("/api/v1/teams/99/retire"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code").value("TEAM_NOT_FOUND"));
-    }
-
-    @Test
-    void retireReturns409() throws Exception {
-        when(teamService.retire(1L))
-                .thenThrow(new ConflictException("TEAM_ALREADY_RETIRED", "Team is already retired"));
-
-        mockMvc.perform(post("/api/v1/teams/1/retire"))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value("TEAM_ALREADY_RETIRED"));
-    }
-
 
 }

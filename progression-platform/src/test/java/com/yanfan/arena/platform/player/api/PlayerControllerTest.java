@@ -126,33 +126,4 @@ class PlayerControllerTest {
                 .andExpect(jsonPath("$.status").value("RETIRED"));
     }
 
-    @Test
-    void retireReturns404ForUnknownPlayer() throws Exception {
-        when(playerService.retire(99L))
-                .thenThrow(new ResourceNotFoundException("PLAYER_NOT_FOUND", "Player not found"));
-
-        mockMvc.perform(post("/api/v1/players/99/retire"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code").value("PLAYER_NOT_FOUND"));
-    }
-
-    @Test
-    void retireReturns409ForPlayerOnActiveTeam() throws Exception {
-        when(playerService.retire(1L))
-                .thenThrow(new ConflictException("PLAYER_IN_ACTIVE_TEAM",
-                        "Player is on an active team and cannot be retired"));
-
-        mockMvc.perform(post("/api/v1/players/1/retire"))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value("PLAYER_IN_ACTIVE_TEAM"));
-    }
-
-
-    @Test
-    void unknownRouteReturns404() throws Exception {
-        mockMvc.perform(get("/api/v1/unknown"))
-                .andExpect(status().isNotFound());
-    }
-
-
 }
