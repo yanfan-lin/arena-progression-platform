@@ -74,7 +74,7 @@ class MatchEventListenerIT {
                 .get(10, TimeUnit.SECONDS);
 
         // Wait for the listener to consume and process it
-        awaitProcessedCount(1);
+        MatchProcessorTestData.awaitProcessedCount(jdbcTemplate, 1);
 
         assertThat(MatchProcessorTestData.countRows(jdbcTemplate, "matches"))
                 .isEqualTo(1);
@@ -88,26 +88,6 @@ class MatchEventListenerIT {
                 "SELECT total_xp FROM players WHERE player_id = ?", Long.class, 101L);
 
         assertThat(alphaOneXp).isEqualTo(650L);
-    }
-
-    // Poll the table until the listener has committed the match
-    private void awaitProcessedCount(int expected) throws InterruptedException {
-
-        long deadline = System.currentTimeMillis() + 15_000;
-
-        while (System.currentTimeMillis() < deadline) {
-            Integer count = jdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM processed_events", Integer.class);
-
-            if (count != null && count == expected) {
-                return;
-            }
-
-            Thread.sleep(200);
-        }
-
-        assertThat(MatchProcessorTestData.countRows(jdbcTemplate, "processed_events"))
-                .isEqualTo(expected);
     }
 
 }

@@ -102,7 +102,7 @@ class MatchRedeliveryIT {
         long sourceOffset = sendResult.getRecordMetadata().offset();
 
         // First delivery commits MySQL
-        awaitProcessedCount(1);
+        awaitProcessedCount(jdbcTemplate, 1);
         assertSingleMatchState();
 
         // Simulate the crash window by stopping the listener,
@@ -147,25 +147,6 @@ class MatchRedeliveryIT {
         assertThat(alphaWins)
                 .isEqualTo(1);
 
-    }
-
-    // Poll until the listener has committed the expected number of events
-    private void awaitProcessedCount(int expected) throws InterruptedException {
-        long deadline = System.currentTimeMillis() + 15_000;
-
-        while (System.currentTimeMillis() < deadline) {
-            Integer count = jdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM processed_events", Integer.class);
-
-            if (count != null && count == expected) {
-                return;
-            }
-
-            Thread.sleep(200);
-        }
-
-        assertThat(countRows(jdbcTemplate, "processed_events"))
-                .isEqualTo(expected);
     }
 
     // Start the listener and wait until it is running

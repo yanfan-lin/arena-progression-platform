@@ -89,7 +89,7 @@ class MatchRetryRecoveryIT {
                 .get(10, TimeUnit.SECONDS);
 
         // Wait for the retry to succeed and commit one match
-        awaitProcessedCount(1);
+        awaitProcessedCount(jdbcTemplate, 1);
 
         assertThat(countRows(jdbcTemplate, "matches"))
                 .isEqualTo(1);
@@ -108,24 +108,6 @@ class MatchRetryRecoveryIT {
 
         // Nothing was sent to the DLT since retry succeeded
         assertNoDltRecord(event.matchId().toString());
-    }
-
-    // Keep polling until the listener has committed the expected number of events
-    private void awaitProcessedCount(int expected) throws InterruptedException {
-        long deadline = System.currentTimeMillis() + 15_000;
-
-        while (System.currentTimeMillis() < deadline) {
-            Integer count = jdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM processed_events", Integer.class);
-
-            if (count != null && count == expected) {
-                return;
-            }
-
-            Thread.sleep(200);
-        }
-
-        assertThat(countRows(jdbcTemplate, "processed_events")).isEqualTo(expected);
     }
 
     // Poll the DLT and fail if the expected key appears

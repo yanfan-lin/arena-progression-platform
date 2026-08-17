@@ -174,29 +174,10 @@ public class MatchEventDltIT {
                 .get(10, TimeUnit.SECONDS);
 
         // Wait for the valid event to be committed
-        awaitProcessedCount(1);
+        MatchProcessorTestData.awaitProcessedCount(jdbcTemplate, 1);
 
         assertThat(MatchProcessorTestData.countRows(jdbcTemplate, "matches"))
                 .isEqualTo(1);
-    }
-
-    // Poll until the listener has committed the expected number of events
-    private void awaitProcessedCount(int expected) throws InterruptedException {
-        long deadline = System.currentTimeMillis() + 15_000;
-
-        while (System.currentTimeMillis() < deadline) {
-            Integer count = jdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM processed_events", Integer.class);
-
-            if (count != null && count == expected) {
-                return;
-            }
-
-            Thread.sleep(200);
-        }
-
-        assertThat(MatchProcessorTestData.countRows(jdbcTemplate, "processed_events"))
-                .isEqualTo(expected);
     }
 
     private ConsumerRecord<String, byte[]> awaitDltRecord(String expectedKey) throws Exception {

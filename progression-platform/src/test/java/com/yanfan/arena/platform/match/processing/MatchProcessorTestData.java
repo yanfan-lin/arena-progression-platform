@@ -10,6 +10,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 // Shared helpers for match processor integration tests
 public final class MatchProcessorTestData {
 
@@ -113,6 +115,24 @@ public final class MatchProcessorTestData {
     // Count rows in a table to prove nothing was written twice
     public static int countRows(JdbcTemplate jdbcTemplate, String table) {
         return jdbcTemplate.queryForObject("SELECT COUNT(*) FROM " + table, Integer.class);
+    }
+
+    // Wait until the listener commits the expected number of processed events
+    public static void awaitProcessedCount(JdbcTemplate jdbcTemplate, int expected) throws InterruptedException {
+        long deadline = System.currentTimeMillis() + 15_000;
+
+        while (System.currentTimeMillis() < deadline) {
+            Integer count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM processed_events", Integer.class);
+
+            if (count != null && count == expected) {
+                return;
+            }
+
+            Thread.sleep(200);
+        }
+
+        assertThat(countRows(jdbcTemplate, "processed_events")).isEqualTo(expected);
     }
 
 }
