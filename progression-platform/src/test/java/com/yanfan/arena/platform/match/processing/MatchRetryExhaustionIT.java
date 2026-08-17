@@ -111,6 +111,18 @@ class MatchRetryExhaustionIT {
         // After all 4 attempts fail, the record reaches the DLT
         ConsumerRecord<String, byte[]> dltRecord = awaitDltRecord(failingEvent.matchId().toString());
 
+        // The headers identify why the record failed
+        byte[] category = dltRecord.headers().lastHeader("failure-category").value();
+
+        assertThat(new String(category, StandardCharsets.UTF_8))
+                .isEqualTo("RETRYABLE");
+
+        byte[] attempt = dltRecord.headers().lastHeader("attempt").value();
+
+        assertThat(new String(attempt, StandardCharsets.UTF_8))
+                .isEqualTo("4");
+
+
         // The original key is preserved
         assertThat(dltRecord.key())
                 .isEqualTo(failingEvent.matchId().toString());

@@ -1,6 +1,7 @@
 package com.yanfan.arena.platform.config;
 
 import com.yanfan.arena.contract.ArenaMatchCompleted;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
@@ -21,6 +22,12 @@ public class KafkaDltConfig {
     @Bean
     KafkaTemplate<String, Object> dltKafkaTemplate(KafkaProperties properties) {
         Map<String, Object> producerProps = properties.buildProducerProperties();
+
+        // Set ack to all
+        producerProps.put(ProducerConfig.ACKS_CONFIG, "all");
+
+        // Prevent duplicate DLT records
+        producerProps.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
 
         // byte[] keeps malformed JSON raw,
         // ArenaMatchCompleted is serialized as JSON
