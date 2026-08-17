@@ -117,11 +117,11 @@ public class KafkaListenerConfig {
         return false;
     }
 
-    // Read delivery header, or return zero when absent
+    // Read the delivery-attempt header, or default to one when absent
     private int attemptCount(ConsumerRecord<?, ?> record) {
         Header header = record.headers().lastHeader(KafkaHeaders.DELIVERY_ATTEMPT);
         if (header == null) {
-            return 0;
+            return 1;
         }
 
         return ByteBuffer.wrap(header.value()).getInt();

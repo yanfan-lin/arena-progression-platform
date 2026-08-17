@@ -26,7 +26,7 @@ public class KafkaDltConfig {
         // Set ack to all
         producerProps.put(ProducerConfig.ACKS_CONFIG, "all");
 
-        // Prevent duplicate DLT records
+        // Make producer retries idempotent
         producerProps.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
 
         // byte[] keeps malformed JSON raw,
