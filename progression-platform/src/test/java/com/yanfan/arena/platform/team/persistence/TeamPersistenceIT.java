@@ -16,8 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.mysql.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
+import static com.yanfan.arena.platform.test.IntegrationTestContainers.mysqlContainer;
+import static com.yanfan.arena.platform.test.IntegrationTestContainers.registerMySqlProperties;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -27,16 +28,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class TeamPersistenceIT {
 
     @Container
-    static final MySQLContainer MYSQL = new MySQLContainer(DockerImageName.parse("mysql:8.4.11"))
-            .withDatabaseName("arena")
-            .withUsername("arena")
-            .withPassword("arena-test");
+    static final MySQLContainer MYSQL = mysqlContainer();
 
     @DynamicPropertySource
     static void datasourceProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", MYSQL::getJdbcUrl);
-        registry.add("spring.datasource.username", MYSQL::getUsername);
-        registry.add("spring.datasource.password", MYSQL::getPassword);
+        registerMySqlProperties(registry, MYSQL);
     }
 
     @Autowired

@@ -21,7 +21,6 @@ import org.testcontainers.mysql.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.KafkaContainer;
-import org.testcontainers.utility.DockerImageName;
 import tools.jackson.databind.ObjectMapper;
 
 import java.nio.charset.StandardCharsets;
@@ -31,6 +30,10 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static com.yanfan.arena.platform.test.IntegrationTestContainers.kafkaContainer;
+import static com.yanfan.arena.platform.test.IntegrationTestContainers.mysqlContainer;
+import static com.yanfan.arena.platform.test.IntegrationTestContainers.registerKafkaProperties;
+import static com.yanfan.arena.platform.test.IntegrationTestContainers.registerMySqlProperties;
 import static org.assertj.core.api.Assertions.assertThat;
 
 // Verify that permanent match failures are routed to the dead-letter topic.
@@ -42,20 +45,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class MatchEventDltIT {
 
     @Container
-    static final MySQLContainer MYSQL = new MySQLContainer(DockerImageName.parse("mysql:8.4.11"))
-            .withDatabaseName("arena")
-            .withUsername("arena")
-            .withPassword("arena-test");
+    static final MySQLContainer MYSQL = mysqlContainer();
 
     @Container
-    static final KafkaContainer KAFKA = new KafkaContainer(DockerImageName.parse("apache/kafka:4.3.1"));
+    static final KafkaContainer KAFKA = kafkaContainer();
 
     @DynamicPropertySource
     static void overrideProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", MYSQL::getJdbcUrl);
-        registry.add("spring.datasource.username", MYSQL::getUsername);
-        registry.add("spring.datasource.password", MYSQL::getPassword);
-        registry.add("spring.kafka.bootstrap-servers", KAFKA::getBootstrapServers);
+        registerMySqlProperties(registry, MYSQL);
+        registerKafkaProperties(registry, KAFKA);
     }
 
     @Autowired
