@@ -112,9 +112,10 @@ public class MatchEventDltIT {
     }
 
     @Test
-    void permanentMatchFailureIsPublishedToDlt() throws Exception {
+    void permanentFailureIsPublishedToDltAndConsumerContinues() throws Exception {
         seedPlayersAndTeams();
 
+        // Publish an event that fails permanently
         ArenaMatchCompleted event = MatchProcessorTestData.event(
                 UUID.fromString("5f8b9a0a-6b3d-4e5f-8f1a-111111111111"),
                 UUID.fromString("5f8b9a0a-6b3d-4e5f-8f1a-222222222222"),
@@ -171,25 +172,6 @@ public class MatchEventDltIT {
                 .isZero();
         assertThat(MatchProcessorTestData.countRows(jdbcTemplate, "matches"))
                 .isZero();
-    }
-
-    @Test
-    void consumerContinuesAfterPermanentFailure() throws Exception {
-        seedPlayersAndTeams();
-
-        // Publish an event that fails permanently
-        ArenaMatchCompleted badEvent = threeVsThreeEvent(
-                UUID.fromString("5f8b9a0a-6b3d-4e5f-8f1a-111111111111"),
-                UUID.fromString("5f8b9a0a-6b3d-4e5f-8f1a-222222222222"),
-                999L);
-
-        kafkaTemplate.send("arena-match-completed",
-                        badEvent.matchId().toString(),
-                        objectMapper.writeValueAsString(badEvent))
-                .get(10, TimeUnit.SECONDS);
-
-        // Wait until the bad event is routed to the dead-letter topic
-        awaitDltRecord(badEvent.matchId().toString());
 
         // Publish a valid event to prove the listener keeps consuming
         ArenaMatchCompleted goodEvent = threeVsThreeEvent(
