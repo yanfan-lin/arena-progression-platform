@@ -1,6 +1,6 @@
 # Arena Progression Platform
 
-An event-driven multiplayer game backend for player XP, team Elo ratings, reliable match processing, and near-real-time leaderboards.
+An event-driven game backend for match processing, player progression, team ratings, and leaderboards.
 
 ## Modules
 
@@ -10,10 +10,12 @@ An event-driven multiplayer game backend for player XP, team Elo ratings, reliab
 
 ## Project Status
 
-| Milestone | Scope | Status |
-|---|---|---|
-| 1 | Multi-module scaffold | Done |
-| 2 | Docker infrastructure and profiles | Done |
-| 3 | Player lifecycle | Done |
-| 4 | Team lifecycle | Done |
-| 5 | Level progression rules and event validation | Done |
+| Milestone | Scope                                  | Status |
+|-----------|----------------------------------------|---|
+| 1         | Multi-module scaffold                  | Done |
+| 2         | Docker infrastructure and profiles     | Done |
+| 3         | Player lifecycle                       | Done |
+| 4         | Team lifecycle                         | Done |
+| 5         | Progression rules and match validation | Done |
+| 6         | Transactional match processing and idempotency | Done|
+| 7         | Kafka consumption, retries, DLT, and redelivery | Done|
