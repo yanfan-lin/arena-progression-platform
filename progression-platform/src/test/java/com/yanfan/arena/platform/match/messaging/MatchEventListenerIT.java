@@ -1,9 +1,7 @@
 package com.yanfan.arena.platform.match.messaging;
 
 import com.yanfan.arena.contract.ArenaMatchCompleted;
-import com.yanfan.arena.contract.MatchMode;
 import com.yanfan.arena.platform.match.processing.MatchProcessorTestData;
-import com.yanfan.arena.platform.team.domain.ArenaMode;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -62,37 +60,13 @@ class MatchEventListenerIT {
     @Test
     void validKafkaEventCommitsOneMatch() throws Exception {
 
-        MatchProcessorTestData.insertPlayer(jdbcTemplate, 101L, "AlphaOne", 500L);
-        MatchProcessorTestData.insertPlayer(jdbcTemplate, 102L, "AlphaTwo", 900L);
-        MatchProcessorTestData.insertPlayer(jdbcTemplate, 103L, "AlphaThree", 0L);
-        MatchProcessorTestData.insertPlayer(jdbcTemplate, 201L, "BetaOne", 500L);
-        MatchProcessorTestData.insertPlayer(jdbcTemplate, 202L, "BetaTwo", 500L);
-        MatchProcessorTestData.insertPlayer(jdbcTemplate, 203L, "BetaThree", 500L);
-
-        MatchProcessorTestData.insertTeam(jdbcTemplate, 1L, "Alpha", ArenaMode.THREE_VS_THREE, 1000);
-        MatchProcessorTestData.insertTeam(jdbcTemplate, 2L, "Beta", ArenaMode.THREE_VS_THREE, 1000);
-
-        MatchProcessorTestData.addMember(jdbcTemplate, 1L, 101L);
-        MatchProcessorTestData.addMember(jdbcTemplate, 1L, 102L);
-        MatchProcessorTestData.addMember(jdbcTemplate, 1L, 103L);
-        MatchProcessorTestData.addMember(jdbcTemplate, 2L, 201L);
-        MatchProcessorTestData.addMember(jdbcTemplate, 2L, 202L);
-        MatchProcessorTestData.addMember(jdbcTemplate, 2L, 203L);
+        MatchProcessorTestData.insertThreeVsThreePlayersAndTeams(jdbcTemplate);
 
         // Team 1 wins
-        ArenaMatchCompleted event = MatchProcessorTestData.event(
+        ArenaMatchCompleted event = MatchProcessorTestData.threeVsThreeEvent(
                 UUID.fromString("4e74866d-5a18-4695-bf5e-ff8b79226b79"),
                 UUID.fromString("0775a8e0-cd3a-4d03-a9d4-62a43fc09d86"),
-                1L,
-                MatchMode.THREE_VS_THREE,
-                MatchProcessorTestData.eventTeam(1L,
-                        MatchProcessorTestData.eventPlayer(101L, 5, 2, 3),
-                        MatchProcessorTestData.eventPlayer(102L, 2, 1, 1),
-                        MatchProcessorTestData.eventPlayer(103L, 0, 0, 0)),
-                MatchProcessorTestData.eventTeam(2L,
-                        MatchProcessorTestData.eventPlayer(201L, 1, 4, 2),
-                        MatchProcessorTestData.eventPlayer(202L, 0, 1, 1),
-                        MatchProcessorTestData.eventPlayer(203L, 2, 2, 0)));
+                1L);
 
         // Publish the event as JSON with the match ID as the Kafka key
         String json = objectMapper.writeValueAsString(event);

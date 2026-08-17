@@ -1,8 +1,6 @@
 package com.yanfan.arena.platform.match.processing;
 
 import com.yanfan.arena.contract.ArenaMatchCompleted;
-import com.yanfan.arena.contract.MatchMode;
-import com.yanfan.arena.platform.team.domain.ArenaMode;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
@@ -85,7 +83,7 @@ class MatchRetryExhaustionIT {
     @Test
     void exhaustedRetryableFailureGoesToDltStopsListenerAndDoesNotCommitOffset() throws Exception {
         // Load players and teams for the match
-        playersAndTeams();
+        insertThreeVsThreePlayersAndTeams(jdbcTemplate);
 
         // Every processing attempt fails until cleared
         matchProcessor.failRetryableForTest();
@@ -163,47 +161,6 @@ class MatchRetryExhaustionIT {
         // A stopped listener does not consume
         assertNothingProcessed();
 
-    }
-
-    private void playersAndTeams() {
-
-        insertPlayer(jdbcTemplate, 101L, "AlphaOne", 500L);
-        insertPlayer(jdbcTemplate, 102L, "AlphaTwo", 900L);
-        insertPlayer(jdbcTemplate, 103L, "AlphaThree", 0L);
-        insertPlayer(jdbcTemplate, 201L, "BetaOne", 500L);
-        insertPlayer(jdbcTemplate, 202L, "BetaTwo", 500L);
-        insertPlayer(jdbcTemplate, 203L, "BetaThree", 500L);
-
-        insertTeam(jdbcTemplate, 1L, "Alpha", ArenaMode.THREE_VS_THREE, 1000);
-        insertTeam(jdbcTemplate, 2L, "Beta", ArenaMode.THREE_VS_THREE, 1000);
-
-        addMember(jdbcTemplate, 1L, 101L);
-        addMember(jdbcTemplate, 1L, 102L);
-        addMember(jdbcTemplate, 1L, 103L);
-        addMember(jdbcTemplate, 2L, 201L);
-        addMember(jdbcTemplate, 2L, 202L);
-        addMember(jdbcTemplate, 2L, 203L);
-    }
-
-    // Team 1 wins
-    private ArenaMatchCompleted threeVsThreeEvent(
-            UUID eventId,
-            UUID matchId,
-            long winnerTeamId)
-    {
-        return event(
-                eventId,
-                matchId,
-                winnerTeamId,
-                MatchMode.THREE_VS_THREE,
-                eventTeam(1L,
-                        eventPlayer(101L, 5, 2, 3),
-                        eventPlayer(102L, 2, 1, 1),
-                        eventPlayer(103L, 0, 0, 0)),
-                eventTeam(2L,
-                        eventPlayer(201L, 1, 4, 2),
-                        eventPlayer(202L, 0, 1, 1),
-                        eventPlayer(203L, 2, 2, 0)));
     }
 
     // Wait for the dead-letter records with the expected key,

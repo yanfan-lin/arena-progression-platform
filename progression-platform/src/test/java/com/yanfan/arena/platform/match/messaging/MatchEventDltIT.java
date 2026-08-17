@@ -1,9 +1,7 @@
 package com.yanfan.arena.platform.match.messaging;
 
 import com.yanfan.arena.contract.ArenaMatchCompleted;
-import com.yanfan.arena.contract.MatchMode;
 import com.yanfan.arena.platform.match.processing.MatchProcessorTestData;
-import com.yanfan.arena.platform.team.domain.ArenaMode;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -113,25 +111,16 @@ public class MatchEventDltIT {
 
     @Test
     void permanentFailureIsPublishedToDltAndConsumerContinues() throws Exception {
-        seedPlayersAndTeams();
+        MatchProcessorTestData.insertThreeVsThreePlayersAndTeams(jdbcTemplate);
 
         // Publish an event that fails permanently
-        ArenaMatchCompleted event = MatchProcessorTestData.event(
+        ArenaMatchCompleted event = MatchProcessorTestData.threeVsThreeEvent(
                 UUID.fromString("5f8b9a0a-6b3d-4e5f-8f1a-111111111111"),
                 UUID.fromString("5f8b9a0a-6b3d-4e5f-8f1a-222222222222"),
                 // This winner is not one of the two teams, so processing fails permanently
-                999L,
-                MatchMode.THREE_VS_THREE,
-                MatchProcessorTestData.eventTeam(1L,
-                        MatchProcessorTestData.eventPlayer(101L, 5, 2, 3),
-                        MatchProcessorTestData.eventPlayer(102L, 2, 1, 1),
-                        MatchProcessorTestData.eventPlayer(103L, 0, 0, 0)),
-                MatchProcessorTestData.eventTeam(2L,
-                        MatchProcessorTestData.eventPlayer(201L, 1, 4, 2),
-                        MatchProcessorTestData.eventPlayer(202L, 0, 1, 1),
-                        MatchProcessorTestData.eventPlayer(203L, 2, 2, 0)));
+                999L);
 
-        // Publish the valid event to the normal match-completed topic
+        // Publish the failing event to the normal match-completed topic
         String json = objectMapper.writeValueAsString(event);
         kafkaTemplate.send("arena-match-completed", event.matchId().toString(), json)
                 .get(10, TimeUnit.SECONDS);
@@ -174,7 +163,7 @@ public class MatchEventDltIT {
                 .isZero();
 
         // Publish a valid event to prove the listener keeps consuming
-        ArenaMatchCompleted goodEvent = threeVsThreeEvent(
+        ArenaMatchCompleted goodEvent = MatchProcessorTestData.threeVsThreeEvent(
                 UUID.fromString("3d2f1c0b-1a2b-3c4d-5e6f-7890abcdef01"),
                 UUID.fromString("3d2f1c0b-1a2b-3c4d-5e6f-7890abcdef02"),
                 1L);
@@ -189,22 +178,6 @@ public class MatchEventDltIT {
 
         assertThat(MatchProcessorTestData.countRows(jdbcTemplate, "matches"))
                 .isEqualTo(1);
-    }
-
-    private ArenaMatchCompleted threeVsThreeEvent(UUID eventId, UUID matchId, long winnerTeamId) {
-        return MatchProcessorTestData.event(
-                eventId,
-                matchId,
-                winnerTeamId,
-                MatchMode.THREE_VS_THREE,
-                MatchProcessorTestData.eventTeam(1L,
-                        MatchProcessorTestData.eventPlayer(101L, 5, 2, 3),
-                        MatchProcessorTestData.eventPlayer(102L, 2, 1, 1),
-                        MatchProcessorTestData.eventPlayer(103L, 0, 0, 0)),
-                MatchProcessorTestData.eventTeam(2L,
-                        MatchProcessorTestData.eventPlayer(201L, 1, 4, 2),
-                        MatchProcessorTestData.eventPlayer(202L, 0, 1, 1),
-                        MatchProcessorTestData.eventPlayer(203L, 2, 2, 0)));
     }
 
     // Poll until the listener has committed the expected number of events
@@ -224,26 +197,6 @@ public class MatchEventDltIT {
 
         assertThat(MatchProcessorTestData.countRows(jdbcTemplate, "processed_events"))
                 .isEqualTo(expected);
-    }
-
-    // Insert the teams and players needed to pass structural validation
-    private void seedPlayersAndTeams() {
-        MatchProcessorTestData.insertPlayer(jdbcTemplate, 101L, "AlphaOne", 500L);
-        MatchProcessorTestData.insertPlayer(jdbcTemplate, 102L, "AlphaTwo", 900L);
-        MatchProcessorTestData.insertPlayer(jdbcTemplate, 103L, "AlphaThree", 0L);
-        MatchProcessorTestData.insertPlayer(jdbcTemplate, 201L, "BetaOne", 500L);
-        MatchProcessorTestData.insertPlayer(jdbcTemplate, 202L, "BetaTwo", 500L);
-        MatchProcessorTestData.insertPlayer(jdbcTemplate, 203L, "BetaThree", 500L);
-
-        MatchProcessorTestData.insertTeam(jdbcTemplate, 1L, "Alpha", ArenaMode.THREE_VS_THREE, 1000);
-        MatchProcessorTestData.insertTeam(jdbcTemplate, 2L, "Beta", ArenaMode.THREE_VS_THREE, 1000);
-
-        MatchProcessorTestData.addMember(jdbcTemplate, 1L, 101L);
-        MatchProcessorTestData.addMember(jdbcTemplate, 1L, 102L);
-        MatchProcessorTestData.addMember(jdbcTemplate, 1L, 103L);
-        MatchProcessorTestData.addMember(jdbcTemplate, 2L, 201L);
-        MatchProcessorTestData.addMember(jdbcTemplate, 2L, 202L);
-        MatchProcessorTestData.addMember(jdbcTemplate, 2L, 203L);
     }
 
     private ConsumerRecord<String, byte[]> awaitDltRecord(String expectedKey) throws Exception {
