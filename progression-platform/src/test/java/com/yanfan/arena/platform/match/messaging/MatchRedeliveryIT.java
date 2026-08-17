@@ -24,10 +24,7 @@ import org.testcontainers.mysql.MySQLContainer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import tools.jackson.databind.ObjectMapper;
 
-import java.time.Duration;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -35,6 +32,7 @@ import static com.yanfan.arena.platform.test.IntegrationTestContainers.kafkaCont
 import static com.yanfan.arena.platform.test.IntegrationTestContainers.mysqlContainer;
 import static com.yanfan.arena.platform.test.IntegrationTestContainers.registerKafkaProperties;
 import static com.yanfan.arena.platform.test.IntegrationTestContainers.registerMySqlProperties;
+import static com.yanfan.arena.platform.test.KafkaTestSupport.committedOffset;
 import static com.yanfan.arena.platform.match.processing.MatchProcessorTestData.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -187,7 +185,7 @@ class MatchRedeliveryIT {
         long deadline = System.currentTimeMillis() + 15_000;
 
         while (System.currentTimeMillis() < deadline) {
-            Long committed = committedOffset(topic, partition);
+            Long committed = committedOffset(KAFKA, groupId, topic, partition);
 
             if (committed != null && committed == expected) {
                 return;
@@ -196,29 +194,7 @@ class MatchRedeliveryIT {
             Thread.sleep(200);
         }
 
-        assertThat(committedOffset(topic, partition)).isEqualTo(expected);
-    }
-
-    // Read the consumer group's committed offset,
-    // or return null when none is committed
-    private Long committedOffset(String topic, int partition) {
-        Map<String, Object> config = Map.of(
-                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA.getBootstrapServers(),
-                ConsumerConfig.GROUP_ID_CONFIG, groupId,
-                ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class,
-                ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class
-        );
-
-        KafkaConsumer<String, byte[]> consumer = new KafkaConsumer<>(config);
-
-        OffsetAndMetadata offsetAndMetadata = consumer.committed(
-                        Set.of(new TopicPartition(topic, partition)),
-                        Duration.ofSeconds(5))
-                .get(new TopicPartition(topic, partition));
-
-        consumer.close();
-
-        return offsetAndMetadata == null ? null : offsetAndMetadata.offset();
+        assertThat(committedOffset(KAFKA, groupId, topic, partition)).isEqualTo(expected);
     }
 
     // Rewind the group's committed offset back to the source record

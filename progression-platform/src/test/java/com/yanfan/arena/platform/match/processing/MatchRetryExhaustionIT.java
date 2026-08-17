@@ -1,10 +1,7 @@
 package com.yanfan.arena.platform.match.processing;
 
 import com.yanfan.arena.contract.ArenaMatchCompleted;
-import org.apache.kafka.clients.consumer.*;
-import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.serialization.ByteArrayDeserializer;
-import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,9 +22,6 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -35,6 +29,8 @@ import static com.yanfan.arena.platform.test.IntegrationTestContainers.kafkaCont
 import static com.yanfan.arena.platform.test.IntegrationTestContainers.mysqlContainer;
 import static com.yanfan.arena.platform.test.IntegrationTestContainers.registerKafkaProperties;
 import static com.yanfan.arena.platform.test.IntegrationTestContainers.registerMySqlProperties;
+import static com.yanfan.arena.platform.test.KafkaTestSupport.awaitDltRecord;
+import static com.yanfan.arena.platform.test.KafkaTestSupport.committedOffset;
 import static com.yanfan.arena.platform.match.processing.MatchProcessorTestData.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -105,7 +101,11 @@ class MatchRetryExhaustionIT {
         long failedOffset = sendResult.getRecordMetadata().offset();
 
         // After all 4 attempts fail, the record reaches the DLT
-        ConsumerRecord<String, byte[]> dltRecord = awaitDltRecord(failingEvent.matchId().toString());
+        ConsumerRecord<String, byte[]> dltRecord = awaitDltRecord(
+                KAFKA,
+                "retry-exhaustion-dlt-check",
+                failingEvent.matchId().toString(),
+                Duration.ofSeconds(20));
 
         // The headers identify why the record failed
         byte[] category = dltRecord.headers().lastHeader("failure-category").value();
@@ -136,7 +136,7 @@ class MatchRetryExhaustionIT {
 
         // Kafka stores the next offset to consume, so a value past the failed
         // record's offset would mean the failed record was acknowledged
-        Long committed = committedOffset(topic, partition);
+        Long committed = committedOffset(KAFKA, groupId, topic, partition);
         if (committed != null) {
             assertThat(committed).isLessThanOrEqualTo(failedOffset);
         }
@@ -161,52 +161,6 @@ class MatchRetryExhaustionIT {
 
     }
 
-    // Wait for the dead-letter records with the expected key,
-    // "earliest" because this test's check group has never committed a DLT offset before
-    private ConsumerRecord<String, byte[]> awaitDltRecord(String expectedKey) throws Exception {
-        Map<String, Object> config = Map.of(
-                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA.getBootstrapServers(),
-                ConsumerConfig.GROUP_ID_CONFIG, "retry-exhaustion-dlt-check",
-                ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class,
-                ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class,
-                ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest"
-        );
-
-        KafkaConsumer<String, byte[]> consumer = new KafkaConsumer<>(config);
-        consumer.subscribe(List.of("arena-match-completed-dlt"));
-
-        ConsumerRecord<String, byte[]> found = null;
-
-        // Keep polling until the record appears or the deadline passes
-        long deadline = System.currentTimeMillis() + 20_000;
-
-        while (System.currentTimeMillis() < deadline) {
-            ConsumerRecords<String, byte[]> records = consumer.poll(Duration.ofSeconds(1));
-
-            for (ConsumerRecord<String, byte[]> record : records) {
-                // The original key and topic header are preserved
-                if (expectedKey.equals(record.key())
-                        && record.headers().lastHeader(KafkaHeaders.DLT_ORIGINAL_TOPIC) != null) {
-                    found = record;
-
-                    break;
-                }
-            }
-
-            if (found != null) {
-                break;
-            }
-        }
-
-        consumer.close();
-
-        if (found == null) {
-            throw new AssertionError("No dead-letter record arrived");
-        }
-
-        return found;
-    }
-
     // Poll until every Kafka listener container reports it has stopped
     private void awaitListenerStopped() throws InterruptedException {
         long deadline = System.currentTimeMillis() + 10_000;
@@ -224,27 +178,6 @@ class MatchRetryExhaustionIT {
         }
 
         throw new AssertionError("Listener did not stop after exhaustion");
-    }
-
-    // Read the consumer group's committed offset,
-    // or return null if none is committed
-    private Long committedOffset(String topic, int partition) {
-        Map<String, Object> config = Map.of(
-                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA.getBootstrapServers(),
-                ConsumerConfig.GROUP_ID_CONFIG, groupId,
-                ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class,
-                ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class
-        );
-
-        KafkaConsumer<String, byte[]> consumer = new KafkaConsumer<>(config);
-
-        OffsetAndMetadata offsetAndMetadata = consumer.committed(
-                        Set.of(new TopicPartition(topic, partition)), Duration.ofSeconds(5))
-                .get(new TopicPartition(topic, partition));
-
-        consumer.close();
-
-        return offsetAndMetadata == null ? null : offsetAndMetadata.offset();
     }
 
     // Prove that nothing was processed during a short period

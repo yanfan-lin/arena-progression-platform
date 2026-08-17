@@ -2,12 +2,7 @@ package com.yanfan.arena.platform.match.messaging;
 
 import com.yanfan.arena.contract.ArenaMatchCompleted;
 import com.yanfan.arena.platform.match.processing.MatchProcessorTestData;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.serialization.ByteArrayDeserializer;
-import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,8 +20,6 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -34,6 +27,7 @@ import static com.yanfan.arena.platform.test.IntegrationTestContainers.kafkaCont
 import static com.yanfan.arena.platform.test.IntegrationTestContainers.mysqlContainer;
 import static com.yanfan.arena.platform.test.IntegrationTestContainers.registerKafkaProperties;
 import static com.yanfan.arena.platform.test.IntegrationTestContainers.registerMySqlProperties;
+import static com.yanfan.arena.platform.test.KafkaTestSupport.awaitDltRecord;
 import static org.assertj.core.api.Assertions.assertThat;
 
 // Verify that permanent match failures are routed to the dead-letter topic.
@@ -78,7 +72,8 @@ public class MatchEventDltIT {
         kafkaTemplate.send("arena-match-completed", "bad-key", badJson)
                 .get(10, TimeUnit.SECONDS);
 
-        ConsumerRecord<String, byte[]> dltRecord = awaitDltRecord("bad-key");
+        ConsumerRecord<String, byte[]> dltRecord = awaitDltRecord(
+                KAFKA, "dlt-test-group", "bad-key", Duration.ofSeconds(15));
 
         // Original key is preserved
         assertThat(dltRecord.key())
@@ -118,7 +113,8 @@ public class MatchEventDltIT {
                 .get(10, TimeUnit.SECONDS);
 
         // Find the DLT record for this specific match ID
-        ConsumerRecord<String, byte[]> dltRecord = awaitDltRecord(event.matchId().toString());
+        ConsumerRecord<String, byte[]> dltRecord = awaitDltRecord(
+                KAFKA, "dlt-test-group", event.matchId().toString(), Duration.ofSeconds(15));
 
         // The original Kafka key is preserved
         assertThat(dltRecord.key())
@@ -172,50 +168,4 @@ public class MatchEventDltIT {
                 .isEqualTo(1);
     }
 
-    private ConsumerRecord<String, byte[]> awaitDltRecord(String expectedKey) throws Exception {
-
-        // Throwaway consumer that reads the DLT
-        Map<String, Object> consumerConfig = Map.of(
-                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA.getBootstrapServers(),
-                ConsumerConfig.GROUP_ID_CONFIG, "dlt-test-group",
-                ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class,
-                ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class,
-                ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest"
-        );
-
-        KafkaConsumer<String, byte[]> consumer = new KafkaConsumer<>(consumerConfig);
-        consumer.subscribe(List.of("arena-match-completed-dlt"));
-
-        ConsumerRecord<String, byte[]> found = null;
-
-        // Give Kafka 15 seconds to deliver DLT record
-        long deadline = System.currentTimeMillis() + 15_000;
-
-        while (System.currentTimeMillis() < deadline) {
-            // Keep polling until the expected DLT record appears.
-            ConsumerRecords<String, byte[]> records = consumer.poll(Duration.ofSeconds(1));
-
-            for (ConsumerRecord<String, byte[]> record : records) {
-                // Match the expected key and confirm Spring added the original-topic header.
-                if (expectedKey.equals(record.key())
-                        && record.headers().lastHeader(KafkaHeaders.DLT_ORIGINAL_TOPIC) != null) {
-                    found = record;
-
-                    break;
-                }
-            }
-
-            if (found != null) {
-                break;
-            }
-        }
-
-        consumer.close();
-
-        if (found == null) {
-            throw new AssertionError("No dead-letter record arrived");
-        }
-
-        return found;
-    }
 }
