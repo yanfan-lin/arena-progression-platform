@@ -59,8 +59,10 @@ class PlayerServiceTest {
 
         PlayerResponse response = playerService.create(request);
 
-        assertThat(response.displayName()).isEqualTo("ArenaExamplePlayer");
-        assertThat(response.status()).isEqualTo(PlayerStatus.ACTIVE);
+        assertThat(response.displayName())
+                .isEqualTo("ArenaExamplePlayer");
+        assertThat(response.status())
+                .isEqualTo(PlayerStatus.ACTIVE);
 
         verify(playerRepository).saveAndFlush(any(Player.class));
     }
@@ -104,7 +106,8 @@ class PlayerServiceTest {
 
         PlayerResponse response = playerService.get(1L);
 
-        assertThat(response.displayName()).isEqualTo("ArenaExamplePlayer");
+        assertThat(response.displayName())
+                .isEqualTo("ArenaExamplePlayer");
     }
 
     @Test
@@ -136,8 +139,10 @@ class PlayerServiceTest {
 
         PlayerResponse response = playerService.retire(1L);
 
-        assertThat(response.status()).isEqualTo(PlayerStatus.RETIRED);
-        assertThat(player.getRetiredAt()).isEqualTo(Instant.parse("2026-08-09T00:00:00Z"));
+        assertThat(response.status())
+                .isEqualTo(PlayerStatus.RETIRED);
+        assertThat(player.getRetiredAt())
+                .isEqualTo(Instant.parse("2026-08-09T00:00:00Z"));
     }
 
     @Test

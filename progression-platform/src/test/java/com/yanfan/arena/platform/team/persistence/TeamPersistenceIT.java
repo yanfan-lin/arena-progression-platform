@@ -47,29 +47,41 @@ class TeamPersistenceIT {
     @Test
     void draftTeamPersistsWithDefaults() {
         Team team = new Team();
+
         team.setName("ArenaForce");
         team.setMode(ArenaMode.THREE_VS_THREE);
 
         Team saved = teamRepository.saveAndFlush(team);
 
-        assertThat(saved.getTeamId()).isPositive();
-        assertThat(saved.getStatus()).isEqualTo(TeamStatus.DRAFT);
-        assertThat(saved.getRating()).isNull();
-        assertThat(saved.getMatchesPlayed()).isZero();
-        assertThat(saved.getWins()).isZero();
-        assertThat(saved.getLosses()).isZero();
-        assertThat(saved.getCreatedAt()).isNotNull();
-        assertThat(saved.getUpdatedAt()).isNotNull();
+        assertThat(saved.getTeamId())
+                .isPositive();
+        assertThat(saved.getStatus())
+                .isEqualTo(TeamStatus.DRAFT);
+        assertThat(saved.getRating())
+                .isNull();
+        assertThat(saved.getMatchesPlayed())
+                .isZero();
+        assertThat(saved.getWins())
+                .isZero();
+        assertThat(saved.getLosses())
+                .isZero();
+        assertThat(saved.getCreatedAt())
+                .isNotNull();
+        assertThat(saved.getUpdatedAt())
+                .isNotNull();
     }
 
     @Test
     void teamNamesAreUniqueCaseInsensitivelyWithinMode() {
         Team first = new Team();
+
         first.setName("ArenaTeam");
         first.setMode(ArenaMode.THREE_VS_THREE);
+
         teamRepository.saveAndFlush(first);
 
         Team duplicate = new Team();
+
         duplicate.setName("arenateam");
         duplicate.setMode(ArenaMode.THREE_VS_THREE);
 
@@ -89,8 +101,10 @@ class TeamPersistenceIT {
 
         TeamMember savedMember = teamMemberRepository.saveAndFlush(member);
 
-        assertThat(savedMember.getMemberId()).isPositive();
-        assertThat(savedMember.getAddedAt()).isNotNull();
+        assertThat(savedMember.getMemberId())
+                .isPositive();
+        assertThat(savedMember.getAddedAt())
+                .isNotNull();
     }
 
     @Test
@@ -99,11 +113,14 @@ class TeamPersistenceIT {
         Long playerId = savePlayer("DuplicatePlayer");
 
         TeamMember first = new TeamMember();
+
         first.setTeamId(teamId);
         first.setPlayerId(playerId);
+
         teamMemberRepository.saveAndFlush(first);
 
         TeamMember second = new TeamMember();
+
         second.setTeamId(teamId);
         second.setPlayerId(playerId);
 
@@ -118,17 +135,21 @@ class TeamPersistenceIT {
         Long playerId = savePlayer("DeletePlayer");
 
         TeamMember member = new TeamMember();
+
         member.setTeamId(teamId);
         member.setPlayerId(playerId);
+
         teamMemberRepository.saveAndFlush(member);
 
         teamMemberRepository.deleteByTeamId(teamId);
 
-        assertThat(teamMemberRepository.findByTeamId(teamId)).isEmpty();
+        assertThat(teamMemberRepository.findByTeamId(teamId))
+                .isEmpty();
     }
 
     private Long saveTeam(String teamName) {
         Team team = new Team();
+
         team.setName(teamName);
         team.setMode(ArenaMode.THREE_VS_THREE);
 

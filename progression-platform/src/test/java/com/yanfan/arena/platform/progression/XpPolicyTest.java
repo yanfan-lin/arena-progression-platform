@@ -13,7 +13,8 @@ class XpPolicyTest {
             "true, 150"
     })
     void xpEarnedUsesCompletionAndWinBonus(boolean won, long expectedXp) {
-        assertThat(XpPolicy.xpEarned(won)).isEqualTo(expectedXp);
+        assertThat(XpPolicy.xpEarned(won))
+                .isEqualTo(expectedXp);
     }
 
     @ParameterizedTest
@@ -26,7 +27,8 @@ class XpPolicyTest {
             "100000, 101"
     })
     void levelIsDerivedFromTotalXp(long totalXp, int expectedLevel) {
-        assertThat(XpPolicy.levelFor(totalXp)).isEqualTo(expectedLevel);
+        assertThat(XpPolicy.levelFor(totalXp))
+                .isEqualTo(expectedLevel);
     }
 
 

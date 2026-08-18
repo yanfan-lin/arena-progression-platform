@@ -169,6 +169,7 @@ class MatchRedeliveryIT {
         container.stop();
 
         long deadline = System.currentTimeMillis() + 10_000;
+
         while (System.currentTimeMillis() < deadline) {
             if (!container.isRunning()) {
                 return;

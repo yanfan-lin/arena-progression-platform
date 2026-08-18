@@ -125,8 +125,10 @@ class MatchProcessorIT {
                 .isEqualTo(7);
 
         // Return summary for later Redis use
-        assertThat(result.processed().teamResults()).hasSize(2);
-        assertThat(result.processed().playerResults()).hasSize(6);
+        assertThat(result.processed().teamResults())
+                .hasSize(2);
+        assertThat(result.processed().playerResults())
+                .hasSize(6);
     }
 
     @Test
@@ -184,13 +186,18 @@ class MatchProcessorIT {
         String storedMode = jdbcTemplate.queryForObject(
                 "SELECT mode FROM matches WHERE match_id = ?", String.class,
                 "0775a8e0-cd3a-4d03-a9d4-62a43fc09d86");
-        assertThat(storedMode).isEqualTo("FIVE_VS_FIVE");
+        assertThat(storedMode)
+                .isEqualTo("FIVE_VS_FIVE");
 
         // One row per snapshot table, with ten participant rows
-        assertThat(countRows(jdbcTemplate, "processed_events")).isEqualTo(1);
-        assertThat(countRows(jdbcTemplate, "matches")).isEqualTo(1);
-        assertThat(countRows(jdbcTemplate, "match_team_results")).isEqualTo(2);
-        assertThat(countRows(jdbcTemplate, "match_participant_results")).isEqualTo(10);
+        assertThat(countRows(jdbcTemplate, "processed_events"))
+                .isEqualTo(1);
+        assertThat(countRows(jdbcTemplate, "matches"))
+                .isEqualTo(1);
+        assertThat(countRows(jdbcTemplate, "match_team_results"))
+                .isEqualTo(2);
+        assertThat(countRows(jdbcTemplate, "match_participant_results"))
+                .isEqualTo(10);
 
         // Equal ratings move 16 points: winner 1016, loser 984
         Integer alphaRating = jdbcTemplate.queryForObject(
@@ -222,15 +229,19 @@ class MatchProcessorIT {
         // Winner got 150 XP, loser got 100 XP
         Long alphaOneXp = jdbcTemplate.queryForObject(
                 "SELECT total_xp FROM players WHERE player_id = ?", Long.class, 101L);
-        assertThat(alphaOneXp).isEqualTo(650L);
+        assertThat(alphaOneXp)
+                .isEqualTo(650L);
 
         Long betaOneXp = jdbcTemplate.queryForObject(
                 "SELECT total_xp FROM players WHERE player_id = ?", Long.class, 201L);
-        assertThat(betaOneXp).isEqualTo(600L);
+        assertThat(betaOneXp)
+                .isEqualTo(600L);
 
         // The returned summary covers both teams and all ten players
-        assertThat(result.processed().teamResults()).hasSize(2);
-        assertThat(result.processed().playerResults()).hasSize(10);
+        assertThat(result.processed().teamResults())
+                .hasSize(2);
+        assertThat(result.processed().playerResults())
+                .hasSize(10);
     }
 
 }

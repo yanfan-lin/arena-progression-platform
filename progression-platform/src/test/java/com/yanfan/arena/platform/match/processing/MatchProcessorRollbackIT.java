@@ -58,38 +58,48 @@ class MatchProcessorRollbackIT {
                 .hasMessage("Forced failure after match inserts");
 
         // No changes after the rollback, and all snapshot tables are empty
-        assertThat(countRows(jdbcTemplate, "processed_events")).isZero();
-        assertThat(countRows(jdbcTemplate, "matches")).isZero();
-        assertThat(countRows(jdbcTemplate, "match_team_results")).isZero();
-        assertThat(countRows(jdbcTemplate, "match_participant_results")).isZero();
+        assertThat(countRows(jdbcTemplate, "processed_events"))
+                .isZero();
+        assertThat(countRows(jdbcTemplate, "matches"))
+                .isZero();
+        assertThat(countRows(jdbcTemplate, "match_team_results"))
+                .isZero();
+        assertThat(countRows(jdbcTemplate, "match_participant_results"))
+                .isZero();
 
         // Players were not given XP
         Long alphaOneXp = jdbcTemplate.queryForObject(
                 "SELECT total_xp FROM players WHERE player_id = ?", Long.class, 101L);
-        assertThat(alphaOneXp).isEqualTo(500L);
+        assertThat(alphaOneXp)
+                .isEqualTo(500L);
 
         // Teams kept their original ratings
         Integer alphaRating = jdbcTemplate.queryForObject(
                 "SELECT rating FROM teams WHERE team_id = ?", Integer.class, 1L);
-        assertThat(alphaRating).isEqualTo(1000);
+        assertThat(alphaRating)
+                .isEqualTo(1000);
 
         // Teams kept their stats
         Integer alphaMatchesPlayed = jdbcTemplate.queryForObject(
                 "SELECT matches_played FROM teams WHERE team_id = ?", Integer.class, 1L);
-        assertThat(alphaMatchesPlayed).isEqualTo(0);
+        assertThat(alphaMatchesPlayed)
+                .isEqualTo(0);
 
         Integer alphaWins = jdbcTemplate.queryForObject(
                 "SELECT wins FROM teams WHERE team_id = ?", Integer.class, 1L);
-        assertThat(alphaWins).isEqualTo(0);
+        assertThat(alphaWins)
+                .isEqualTo(0);
 
         Integer alphaKills = jdbcTemplate.queryForObject(
                 "SELECT total_kills FROM teams WHERE team_id = ?", Integer.class, 1L);
-        assertThat(alphaKills).isEqualTo(0);
+        assertThat(alphaKills)
+                .isEqualTo(0);
 
         // Player level is unchanged
         Integer alphaOneLevel = jdbcTemplate.queryForObject(
                 "SELECT level FROM players WHERE player_id = ?", Integer.class, 101L);
-        assertThat(alphaOneLevel).isEqualTo(1);
+        assertThat(alphaOneLevel)
+                .isEqualTo(1);
 
     }
 

@@ -49,12 +49,12 @@ class MatchEventDeserializationTest {
 
         byte[] json = serializer.serialize("arena-match-completed", new RecordHeaders(), event);
 
-        Object result = deserializer.deserialize("arena-match-completed", new RecordHeaders(), json);
+        ArenaMatchCompleted result = deserializer.deserialize("arena-match-completed", new RecordHeaders(), json);
 
         assertThat(result)
                 .isInstanceOf(ArenaMatchCompleted.class);
 
-        assertThat(((ArenaMatchCompleted) result).matchId())
+        assertThat(result.matchId())
                 .isEqualTo(UUID.fromString("0775a8e0-cd3a-4d03-a9d4-62a43fc09d86"));
 
     }

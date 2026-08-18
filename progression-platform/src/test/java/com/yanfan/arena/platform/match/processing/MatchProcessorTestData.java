@@ -143,7 +143,8 @@ public final class MatchProcessorTestData {
             Thread.sleep(200);
         }
 
-        assertThat(countRows(jdbcTemplate, "processed_events")).isEqualTo(expected);
+        assertThat(countRows(jdbcTemplate, "processed_events"))
+                .isEqualTo(expected);
     }
 
 }

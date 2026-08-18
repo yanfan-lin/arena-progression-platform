@@ -63,8 +63,10 @@ class MatchProgressionCalculatorTest {
                         201L, betaOne, 202L, betaTwo, 203L, betaThree));
 
         // The summary carries the event and match identifiers
-        assertThat(result.eventId()).isEqualTo(EVENT_ID.toString());
-        assertThat(result.matchId()).isEqualTo(MATCH_ID.toString());
+        assertThat(result.eventId())
+                .isEqualTo(EVENT_ID.toString());
+        assertThat(result.matchId())
+                .isEqualTo(MATCH_ID.toString());
 
         assertThat(result.mode()).isEqualTo(ArenaMode.THREE_VS_THREE);
         assertThat(result.winningTeamId()).isEqualTo(1L);
@@ -72,36 +74,59 @@ class MatchProgressionCalculatorTest {
 
         // Team A wins: equal ratings gain 16 points, so 1000 -> 1016
         MatchProcessingResult.TeamResult teamAResult = result.teamResults().get(0);
-        assertThat(teamAResult.teamId()).isEqualTo(1L);
-        assertThat(teamAResult.teamNameSnapshot()).isEqualTo("Alpha");
-        assertThat(teamAResult.ratingBefore()).isEqualTo(1000);
-        assertThat(teamAResult.ratingChange()).isEqualTo(16);
-        assertThat(teamAResult.ratingAfter()).isEqualTo(1016);
-        assertThat(teamAResult.matchesPlayedAfter()).isEqualTo(6);
-        assertThat(teamAResult.winsAfter()).isEqualTo(4);
-        assertThat(teamAResult.lossesAfter()).isEqualTo(2);
+
+        assertThat(teamAResult.teamId())
+                .isEqualTo(1L);
+        assertThat(teamAResult.teamNameSnapshot())
+                .isEqualTo("Alpha");
+        assertThat(teamAResult.ratingBefore())
+                .isEqualTo(1000);
+        assertThat(teamAResult.ratingChange())
+                .isEqualTo(16);
+        assertThat(teamAResult.ratingAfter())
+                .isEqualTo(1016);
+        assertThat(teamAResult.matchesPlayedAfter())
+                .isEqualTo(6);
+        assertThat(teamAResult.winsAfter())
+                .isEqualTo(4);
+        assertThat(teamAResult.lossesAfter())
+                .isEqualTo(2);
 
         // Team A's lifetime K/D/A updated with this match's sums (7/3/4)
-        assertThat(teamAResult.totalKillsAfter()).isEqualTo(17);
-        assertThat(teamAResult.totalDeathsAfter()).isEqualTo(11);
-        assertThat(teamAResult.totalAssistsAfter()).isEqualTo(10);
+        assertThat(teamAResult.totalKillsAfter())
+                .isEqualTo(17);
+        assertThat(teamAResult.totalDeathsAfter())
+                .isEqualTo(11);
+        assertThat(teamAResult.totalAssistsAfter())
+                .isEqualTo(10);
 
         // Team B loses: the same 16 points deduced
         MatchProcessingResult.TeamResult teamBResult = result.teamResults().get(1);
-        assertThat(teamBResult.ratingBefore()).isEqualTo(1000);
-        assertThat(teamBResult.ratingChange()).isEqualTo(-16);
-        assertThat(teamBResult.ratingAfter()).isEqualTo(984);
-        assertThat(teamBResult.matchesPlayedAfter()).isEqualTo(5);
-        assertThat(teamBResult.winsAfter()).isEqualTo(2);
-        assertThat(teamBResult.lossesAfter()).isEqualTo(3);
+
+        assertThat(teamBResult.ratingBefore())
+                .isEqualTo(1000);
+        assertThat(teamBResult.ratingChange())
+                .isEqualTo(-16);
+        assertThat(teamBResult.ratingAfter())
+                .isEqualTo(984);
+        assertThat(teamBResult.matchesPlayedAfter())
+                .isEqualTo(5);
+        assertThat(teamBResult.winsAfter())
+                .isEqualTo(2);
+        assertThat(teamBResult.lossesAfter())
+                .isEqualTo(3);
 
         // Team B's lifetime K/D/A updated with this match's sums (3/9/3)
-        assertThat(teamBResult.totalKillsAfter()).isEqualTo(8);
-        assertThat(teamBResult.totalDeathsAfter()).isEqualTo(16);
-        assertThat(teamBResult.totalAssistsAfter()).isEqualTo(6);
+        assertThat(teamBResult.totalKillsAfter())
+                .isEqualTo(8);
+        assertThat(teamBResult.totalDeathsAfter())
+                .isEqualTo(16);
+        assertThat(teamBResult.totalAssistsAfter())
+                .isEqualTo(6);
 
         // Every participant gets one result row
-        assertThat(result.playerResults()).hasSize(6);
+        assertThat(result.playerResults())
+                .hasSize(6);
 
         // Winning player: 150 XP (100 play + 50 win), 500 -> 650 XP, still level 1
         MatchProcessingResult.PlayerResult alphaOneResult = result.playerResults().get(0);
@@ -176,40 +201,66 @@ class MatchProgressionCalculatorTest {
         assertThat(result.mode()).isEqualTo(ArenaMode.FIVE_VS_FIVE);
 
         // Two team rows and ten player rows
-        assertThat(result.teamResults()).hasSize(2);
-        assertThat(result.playerResults()).hasSize(10);
+        assertThat(result.teamResults())
+                .hasSize(2);
+        assertThat(result.playerResults())
+                .hasSize(10);
 
         // Winner: 1000 -> 1016, matches 11, wins 7, and 5 more kills
         MatchProcessingResult.TeamResult teamAResult = result.teamResults().get(0);
-        assertThat(teamAResult.ratingAfter()).isEqualTo(1016);
-        assertThat(teamAResult.matchesPlayedAfter()).isEqualTo(11);
-        assertThat(teamAResult.winsAfter()).isEqualTo(7);
-        assertThat(teamAResult.lossesAfter()).isEqualTo(4);
-        assertThat(teamAResult.totalKillsAfter()).isEqualTo(35);
-        assertThat(teamAResult.totalDeathsAfter()).isEqualTo(20);
-        assertThat(teamAResult.totalAssistsAfter()).isEqualTo(15);
+
+        assertThat(teamAResult.ratingAfter())
+                .isEqualTo(1016);
+        assertThat(teamAResult.matchesPlayedAfter())
+                .isEqualTo(11);
+        assertThat(teamAResult.winsAfter())
+                .isEqualTo(7);
+        assertThat(teamAResult.lossesAfter())
+                .isEqualTo(4);
+        assertThat(teamAResult.totalKillsAfter())
+                .isEqualTo(35);
+        assertThat(teamAResult.totalDeathsAfter())
+                .isEqualTo(20);
+        assertThat(teamAResult.totalAssistsAfter())
+                .isEqualTo(15);
 
         // Loser: 1000 -> 984, matches 9, losses 6, and 5 more deaths
         MatchProcessingResult.TeamResult teamBResult = result.teamResults().get(1);
-        assertThat(teamBResult.ratingAfter()).isEqualTo(984);
-        assertThat(teamBResult.matchesPlayedAfter()).isEqualTo(9);
-        assertThat(teamBResult.winsAfter()).isEqualTo(3);
-        assertThat(teamBResult.lossesAfter()).isEqualTo(6);
-        assertThat(teamBResult.totalKillsAfter()).isEqualTo(18);
-        assertThat(teamBResult.totalDeathsAfter()).isEqualTo(30);
-        assertThat(teamBResult.totalAssistsAfter()).isEqualTo(10);
+
+        assertThat(teamBResult.ratingAfter())
+                .isEqualTo(984);
+        assertThat(teamBResult.matchesPlayedAfter())
+                .isEqualTo(9);
+        assertThat(teamBResult.winsAfter())
+                .isEqualTo(3);
+        assertThat(teamBResult.lossesAfter())
+                .isEqualTo(6);
+        assertThat(teamBResult.totalKillsAfter())
+                .isEqualTo(18);
+        assertThat(teamBResult.totalDeathsAfter())
+                .isEqualTo(30);
+        assertThat(teamBResult.totalAssistsAfter())
+                .isEqualTo(10);
 
         // First winner: 150 XP, 500 -> 650, still level 1
         MatchProcessingResult.PlayerResult alphaOneResult = result.playerResults().get(0);
-        assertThat(alphaOneResult.xpEarned()).isEqualTo(150);
-        assertThat(alphaOneResult.totalXpAfter()).isEqualTo(650);
-        assertThat(alphaOneResult.levelAfter()).isEqualTo(1);
+
+        assertThat(alphaOneResult.xpEarned())
+                .isEqualTo(150);
+        assertThat(alphaOneResult.totalXpAfter())
+                .isEqualTo(650);
+        assertThat(alphaOneResult.levelAfter())
+                .isEqualTo(1);
 
         // First loser: 100 XP, 500 -> 600, still level 1
         MatchProcessingResult.PlayerResult betaOneResult = result.playerResults().get(5);
-        assertThat(betaOneResult.xpEarned()).isEqualTo(100);
-        assertThat(betaOneResult.totalXpAfter()).isEqualTo(600);
-        assertThat(betaOneResult.levelAfter()).isEqualTo(1);
+
+        assertThat(betaOneResult.xpEarned())
+                .isEqualTo(100);
+        assertThat(betaOneResult.totalXpAfter())
+                .isEqualTo(600);
+        assertThat(betaOneResult.levelAfter())
+                .isEqualTo(1);
     }
 
     // Reject XP that would overflow the cumulative long total
@@ -342,9 +393,11 @@ class MatchProgressionCalculatorTest {
     private Player player(String displayName, long totalXp) {
         Player player = mock(Player.class);
 
-        when(player.getDisplayName()).thenReturn(displayName);
+        when(player.getDisplayName())
+                .thenReturn(displayName);
 
-        when(player.getTotalXp()).thenReturn(totalXp);
+        when(player.getTotalXp())
+                .thenReturn(totalXp);
 
         return player;
     }

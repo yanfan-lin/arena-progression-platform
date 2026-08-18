@@ -65,9 +65,12 @@ class TeamServiceTest {
 
         TeamResponse response = teamService.create(request);
 
-        assertThat(response.name()).isEqualTo("ExampleTeam");
-        assertThat(response.mode()).isEqualTo(ArenaMode.THREE_VS_THREE);
-        assertThat(response.status()).isEqualTo(TeamStatus.DRAFT);
+        assertThat(response.name())
+                .isEqualTo("ExampleTeam");
+        assertThat(response.mode()).
+                isEqualTo(ArenaMode.THREE_VS_THREE);
+        assertThat(response.status())
+                .isEqualTo(TeamStatus.DRAFT);
     }
 
     @Test
@@ -118,8 +121,10 @@ class TeamServiceTest {
 
         TeamResponse response = teamService.get(1L);
 
-        assertThat(response.name()).isEqualTo("ExampleTeam");
-        assertThat(response.playerIds()).containsExactly(10L, 11L, 12L);
+        assertThat(response.name())
+                .isEqualTo("ExampleTeam");
+        assertThat(response.playerIds())
+                .containsExactly(10L, 11L, 12L);
     }
 
     @Test
@@ -157,7 +162,8 @@ class TeamServiceTest {
         verify(teamMemberRepository, org.mockito.Mockito.times(2))
                 .save(any(TeamMember.class));
 
-        assertThat(response.name()).isEqualTo("ExampleTeam");
+        assertThat(response.name())
+                .isEqualTo("ExampleTeam");
     }
 
     @Test
@@ -165,7 +171,8 @@ class TeamServiceTest {
         Team team = new Team();
         team.setStatus(TeamStatus.ACTIVE);
 
-        when(teamRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(team));
+        when(teamRepository.findByIdForUpdate(1L))
+                .thenReturn(Optional.of(team));
 
         ReplaceRosterRequest request = new ReplaceRosterRequest();
         request.setPlayerIds(List.of(10L));
@@ -245,9 +252,12 @@ class TeamServiceTest {
 
         TeamResponse response = teamService.activate(1L);
 
-        assertThat(response.status()).isEqualTo(TeamStatus.ACTIVE);
-        assertThat(response.rating()).isEqualTo(1000);
-        assertThat(team.getActivatedAt()).isEqualTo(Instant.parse("2026-08-11T00:00:00Z"));
+        assertThat(response.status())
+                .isEqualTo(TeamStatus.ACTIVE);
+        assertThat(response.rating())
+                .isEqualTo(1000);
+        assertThat(team.getActivatedAt())
+                .isEqualTo(Instant.parse("2026-08-11T00:00:00Z"));
 
     }
 
@@ -305,7 +315,6 @@ class TeamServiceTest {
         assertThatThrownBy(() -> teamService.activate(1L))
                 .isInstanceOf(ConflictException.class)
                 .hasMessageContaining("Only draft teams");
-
     }
 
     @Test
@@ -331,10 +340,12 @@ class TeamServiceTest {
 
         TeamResponse response = teamService.retire(1L);
 
-        assertThat(response.status()).isEqualTo(TeamStatus.RETIRED);
-        assertThat(team.getRetiredAt()).isEqualTo(Instant.parse("2026-08-11T00:00:00Z"));
-        assertThat(response.playerIds()).containsExactly(10L, 11L, 12L);
-
+        assertThat(response.status())
+                .isEqualTo(TeamStatus.RETIRED);
+        assertThat(team.getRetiredAt())
+                .isEqualTo(Instant.parse("2026-08-11T00:00:00Z"));
+        assertThat(response.playerIds())
+                .containsExactly(10L, 11L, 12L);
     }
 
     @Test

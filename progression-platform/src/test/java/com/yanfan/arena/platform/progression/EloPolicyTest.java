@@ -25,8 +25,11 @@ class EloPolicyTest {
     ) {
         EloPolicy.RatingChange change = EloPolicy.calculate(winnerRating, loserRating);
 
-        assertThat(change.winnerRatingAfter()).isEqualTo(expectedWinnerAfter);
-        assertThat(change.loserRatingAfter()).isEqualTo(expectedLoserAfter);
+        assertThat(change.winnerRatingAfter())
+                .isEqualTo(expectedWinnerAfter);
+
+        assertThat(change.loserRatingAfter())
+                .isEqualTo(expectedLoserAfter);
     }
 
     @Test

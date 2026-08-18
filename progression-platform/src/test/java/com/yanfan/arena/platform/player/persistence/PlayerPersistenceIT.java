@@ -45,12 +45,18 @@ class PlayerPersistenceIT {
 
         Player saved = playerRepository.saveAndFlush(player);
 
-        assertThat(saved.getPlayerId()).isPositive();
-        assertThat(saved.getStatus()).isEqualTo(PlayerStatus.ACTIVE);
-        assertThat(saved.getTotalXp()).isZero();
-        assertThat(saved.getLevel()).isEqualTo(1);
-        assertThat(saved.getCreatedAt()).isNotNull();
-        assertThat(saved.getUpdatedAt()).isNotNull();
+        assertThat(saved.getPlayerId())
+                .isPositive();
+        assertThat(saved.getStatus())
+                .isEqualTo(PlayerStatus.ACTIVE);
+        assertThat(saved.getTotalXp())
+                .isZero();
+        assertThat(saved.getLevel())
+                .isEqualTo(1);
+        assertThat(saved.getCreatedAt())
+                .isNotNull();
+        assertThat(saved.getUpdatedAt())
+                .isNotNull();
     }
 
     @Test
@@ -78,7 +84,8 @@ class PlayerPersistenceIT {
                 "SELECT level FROM players WHERE display_name = ?",
                 Integer.class, "ConsistentLevelPlayer");
 
-        assertThat(level).isEqualTo(3);
+        assertThat(level)
+                .isEqualTo(3);
     }
 
     // Verify that MySQL rejects players whose level

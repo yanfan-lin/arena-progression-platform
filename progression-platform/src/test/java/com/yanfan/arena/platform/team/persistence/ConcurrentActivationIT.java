@@ -24,7 +24,7 @@ import static com.yanfan.arena.platform.test.IntegrationTestContainers.mysqlCont
 import static com.yanfan.arena.platform.test.IntegrationTestContainers.registerMySqlProperties;
 import static org.assertj.core.api.Assertions.assertThat;
 
-// Prove the concurrent activation guarantee:
+// Verify that the concurrent activation guarantee:
 // Two teams activating the same player at the same time and ONLY one succeeds
 @SpringBootTest
 @Testcontainers
@@ -74,6 +74,7 @@ class ConcurrentActivationIT {
 
         Throwable teamAError = null;
         Throwable teamBError = null;
+
         try {
             assertThat(ready.await(10, TimeUnit.SECONDS)).isTrue();
             start.countDown();
@@ -84,18 +85,21 @@ class ConcurrentActivationIT {
             executor.shutdownNow();
         }
 
-        // Exactly one activation succeeds, the other must be a conflict.
-        assertThat(teamAError == null ^ teamBError == null).isTrue();
+        // Exactly one activation succeeds, the other must be a conflict
+        assertThat(teamAError == null ^ teamBError == null)
+                .isTrue();
 
         Throwable loser = teamAError != null ? teamAError : teamBError;
 
-        assertThat(loser).isInstanceOf(ConflictException.class);
+        assertThat(loser)
+                .isInstanceOf(ConflictException.class);
 
         Long activeTeams = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM teams WHERE status = 'ACTIVE' AND team_id IN (?, ?)",
                 Long.class, teamAId, teamBId);
-        assertThat(activeTeams).isEqualTo(1);
 
+        assertThat(activeTeams)
+                .isEqualTo(1);
     }
 
     private Throwable activate(Long teamId, CountDownLatch ready, CountDownLatch start) {
@@ -104,7 +108,8 @@ class ConcurrentActivationIT {
             start.await();
             teamService.activate(teamId);
             return null;
-        } catch (Throwable t) {
+        }
+        catch (Throwable t) {
             return t;
         }
     }
@@ -112,21 +117,27 @@ class ConcurrentActivationIT {
     private Long savePlayer(String displayName) {
         Player player = new Player();
         player.setDisplayName(displayName);
+
         return playerRepository.saveAndFlush(player).getPlayerId();
     }
 
     private Long createDraftTeam(String name, Long... playerIds) {
         Team team = new Team();
+
         team.setName(name);
         team.setMode(ArenaMode.THREE_VS_THREE);
+
         Long teamId = teamRepository.saveAndFlush(team).getTeamId();
 
         for (Long playerId : playerIds) {
             TeamMember member = new TeamMember();
+
             member.setTeamId(teamId);
             member.setPlayerId(playerId);
+
             teamMemberRepository.saveAndFlush(member);
         }
+
         return teamId;
     }
 

@@ -137,13 +137,16 @@ class MatchProcessorDuplicateIT {
                 .isEqualTo(MatchProcessingResult.MatchProcessingOutcome.DUPLICATE);
 
         // The committed match ID wins over the incoming new one
-        assertThat(result.reconciliation()).isNotNull();
+        assertThat(result.reconciliation())
+                .isNotNull();
         assertThat(result.reconciliation().committedMatchId())
                 .isEqualTo("0775a8e0-cd3a-4d03-a9d4-62a43fc09d86");
 
         // Still exactly one event record
-        assertThat(countRows(jdbcTemplate, "processed_events")).isEqualTo(1);
-        assertThat(countRows(jdbcTemplate, "match_team_results")).isEqualTo(2);
+        assertThat(countRows(jdbcTemplate, "processed_events"))
+                .isEqualTo(1);
+        assertThat(countRows(jdbcTemplate, "match_team_results"))
+                .isEqualTo(2);
     }
 
     // Create players, teams, rosters, and the original match event

@@ -105,7 +105,8 @@ class MatchRetryRecoveryIT {
         assertThat(alphaOneXp).isEqualTo(650L);
 
         // Nothing was sent to the DLT since retry succeeded
-        assertNoDltRecord(event.matchId().toString());
+        assertNoDltRecord(event.matchId()
+                .toString());
     }
 
     // Poll the DLT and fail if the expected key appears

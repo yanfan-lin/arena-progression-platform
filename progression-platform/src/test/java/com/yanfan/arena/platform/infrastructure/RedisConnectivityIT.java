@@ -20,8 +20,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 class RedisConnectivityIT {
 
-    // Start throwaway MySQL and Redis containers for this test;
-    // nothing here touches the locally running Compose stack.
+    // Start throwaway MySQL and Redis containers for this test,
+    // nothing here touches the locally running Compose stack
     @Container
     static final MySQLContainer MYSQL = mysqlContainer();
 
@@ -29,7 +29,7 @@ class RedisConnectivityIT {
     static final GenericContainer<?> REDIS = new GenericContainer<>(DockerImageName.parse("redis:7.4.10"))
             .withExposedPorts(6379);
 
-    // Point the app's connection settings at the throwaway containers.
+    // Point the app's connection settings at the throwaway containers
     @DynamicPropertySource
     static void overrideProperties(DynamicPropertyRegistry registry) {
         registerMySqlProperties(registry, MYSQL);
@@ -43,6 +43,10 @@ class RedisConnectivityIT {
     @Test
     void redisReadsAndWrites() {
         redisTemplate.opsForValue().set("key", "ok");
-        assertThat(redisTemplate.opsForValue().get("key")).isEqualTo("ok");
+
+        assertThat(redisTemplate.opsForValue().get("key"))
+                .isEqualTo("ok");
     }
+
+
 }
