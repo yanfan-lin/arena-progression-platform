@@ -14,4 +14,14 @@ public interface MatchTeamResultRepository extends JpaRepository<MatchTeamResult
     @Query("SELECT r.id.teamId FROM MatchTeamResult r WHERE r.id.matchId = :matchId")
     List<Long> findTeamIdsByMatchId(String matchId);
 
+    // Load one match's team snapshots in ascending team ID order
+    @Query("""
+              SELECT result
+              FROM MatchTeamResult result
+              WHERE result.id.matchId = :matchId
+              ORDER BY result.id.teamId
+            """)
+    List<MatchTeamResult> findAllByMatchId(String matchId);
+
+
 }
