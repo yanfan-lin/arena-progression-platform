@@ -1,9 +1,13 @@
 package com.yanfan.arena.platform.player.api;
 
+import com.yanfan.arena.platform.api.PageResponse;
 import com.yanfan.arena.platform.error.ConflictException;
 import com.yanfan.arena.platform.error.ResourceNotFoundException;
+import com.yanfan.arena.platform.match.api.MatchOutcome;
 import com.yanfan.arena.platform.player.domain.PlayerStatus;
+import com.yanfan.arena.platform.player.service.PlayerMatchHistoryService;
 import com.yanfan.arena.platform.player.service.PlayerService;
+import com.yanfan.arena.platform.team.domain.ArenaMode;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -11,7 +15,12 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -25,6 +34,9 @@ class PlayerControllerTest {
 
     @MockitoBean
     PlayerService playerService;
+
+    @MockitoBean
+    PlayerMatchHistoryService playerMatchHistoryService;
 
     @Test
     void createReturns201WithLocation() throws Exception {
@@ -124,6 +136,74 @@ class PlayerControllerTest {
         mockMvc.perform(post("/api/v1/players/1/retire"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("RETIRED"));
+    }
+
+    // Return stored player history using the default pagination values
+    @Test
+    void getMatchHistoryReturnsStoredPage() throws Exception {
+        Long playerId = 7L;
+
+        UUID matchId = UUID.fromString(
+                "11111111-1111-1111-1111-111111111111");
+
+        PlayerMatchHistoryResponse historyEntry =
+                new PlayerMatchHistoryResponse(
+                        matchId,
+                        ArenaMode.THREE_VS_THREE,
+                        Instant.parse("2026-08-19T12:00:00Z"),
+                        playerId,
+                        "Stored Player",
+                        10L,
+                        "Stored Winners",
+                        MatchOutcome.WIN,
+                        1000,
+                        16,
+                        1016,
+                        8,
+                        2,
+                        5,
+                        150
+                );
+
+        PageResponse<PlayerMatchHistoryResponse> response =
+                new PageResponse<>(
+                        List.of(historyEntry),
+                        0,
+                        20,
+                        1,
+                        1
+                );
+
+        when(playerMatchHistoryService.getHistory(playerId, 0, 20))
+                .thenReturn(response);
+
+        mockMvc.perform(get(
+                        "/api/v1/players/{playerId}/matches",
+                        playerId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].matchId")
+                        .value(matchId.toString()))
+                .andExpect(jsonPath("$.content[0].playerName")
+                        .value("Stored Player"))
+                .andExpect(jsonPath("$.content[0].outcome")
+                        .value("WIN"))
+                .andExpect(jsonPath("$.page")
+                        .value(0))
+                .andExpect(jsonPath("$.size")
+                        .value(20))
+                .andExpect(jsonPath("$.totalElements")
+                        .value(1));
+    }
+
+    // Reject a page size above API limit (100)
+    @Test
+    void getMatchHistoryRejectsExcessivePageSize() throws Exception {
+        mockMvc.perform(get("/api/v1/players/7/matches")
+                        .param("size", "101"))
+                .andExpect(status().isBadRequest());
+
+        // Stop before calling the service for invalid pagination
+        verifyNoInteractions(playerMatchHistoryService);
     }
 
 }
