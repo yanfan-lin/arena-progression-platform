@@ -11,7 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// Read stored match snapshots for player history responses
+// Read player match history from stored match results
 @Service
 public class PlayerMatchHistoryService {
     private final PlayerRepository playerRepository;
