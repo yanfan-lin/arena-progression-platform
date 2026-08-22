@@ -1,9 +1,12 @@
 package com.yanfan.arena.platform.team.api;
 
+import com.yanfan.arena.platform.api.PageResponse;
 import com.yanfan.arena.platform.error.ConflictException;
 import com.yanfan.arena.platform.error.ResourceNotFoundException;
+import com.yanfan.arena.platform.match.api.MatchOutcome;
 import com.yanfan.arena.platform.team.domain.ArenaMode;
 import com.yanfan.arena.platform.team.domain.TeamStatus;
+import com.yanfan.arena.platform.team.service.TeamMatchHistoryService;
 import com.yanfan.arena.platform.team.service.TeamService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,9 +17,11 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -30,6 +35,8 @@ class TeamControllerTest {
     @MockitoBean
     TeamService teamService;
 
+    @MockitoBean
+    TeamMatchHistoryService teamMatchHistoryService;
 
     @Test
     void createReturns201WithLocation() throws Exception {
@@ -195,6 +202,74 @@ class TeamControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("RETIRED"));
 
+    }
+
+    // Return stored team history using default pagination
+    @Test
+    void getMatchHistoryReturnsStoredPage() throws Exception {
+
+        Long teamId = 10L;
+
+        UUID matchId = UUID.fromString(
+                "11111111-1111-1111-1111-111111111111");
+
+        TeamMatchHistoryResponse historyEntry =
+                new TeamMatchHistoryResponse(
+                        matchId,
+                        ArenaMode.THREE_VS_THREE,
+                        Instant.parse("2026-08-19T12:00:00Z"),
+                        teamId,
+                        "Stored Winners",
+                        MatchOutcome.WIN,
+                        1000,
+                        16,
+                        1016,
+                        18,
+                        7,
+                        12
+                );
+
+        PageResponse<TeamMatchHistoryResponse> response =
+                new PageResponse<>(
+                        List.of(historyEntry),
+                        0,
+                        20,
+                        1,
+                        1
+                );
+
+        when(teamMatchHistoryService.getHistory(teamId, 0, 20))
+                .thenReturn(response);
+
+        mockMvc.perform(get(
+                        "/api/v1/teams/{teamId}/matches",
+                        teamId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].matchId")
+                        .value(matchId.toString()))
+                .andExpect(jsonPath("$.content[0].teamName")
+                        .value("Stored Winners"))
+                .andExpect(jsonPath("$.content[0].outcome")
+                        .value("WIN"))
+                .andExpect(jsonPath("$.content[0].kills")
+                        .value(18))
+                .andExpect(jsonPath("$.page")
+                        .value(0))
+                .andExpect(jsonPath("$.size")
+                        .value(20))
+                .andExpect(jsonPath("$.totalElements")
+                        .value(1));
+    }
+
+    // Reject a page size above API limit (100)
+    @Test
+    void getMatchHistoryRejectsExcessivePageSize() throws Exception {
+
+        mockMvc.perform(get("/api/v1/teams/10/matches")
+                .param("size", "101"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(teamMatchHistoryService);
     }
 
 }
