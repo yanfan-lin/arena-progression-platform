@@ -7,13 +7,11 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.mysql.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.mysql.MySQLContainer;
 
-import static com.yanfan.arena.platform.test.IntegrationTestContainers.mysqlContainer;
-import static com.yanfan.arena.platform.test.IntegrationTestContainers.registerMySqlProperties;
+import static com.yanfan.arena.platform.test.IntegrationTestContainers.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
@@ -26,15 +24,13 @@ class RedisConnectivityIT {
     static final MySQLContainer MYSQL = mysqlContainer();
 
     @Container
-    static final GenericContainer<?> REDIS = new GenericContainer<>(DockerImageName.parse("redis:7.4.10"))
-            .withExposedPorts(6379);
+    static final GenericContainer<?> REDIS = redisContainer();
 
     // Point the app's connection settings at the throwaway containers
     @DynamicPropertySource
     static void overrideProperties(DynamicPropertyRegistry registry) {
         registerMySqlProperties(registry, MYSQL);
-        registry.add("spring.data.redis.host", REDIS::getHost);
-        registry.add("spring.data.redis.port", REDIS::getFirstMappedPort);
+        registerRedisProperties(registry, REDIS);
     }
 
     @Autowired

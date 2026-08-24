@@ -4,6 +4,8 @@ import com.yanfan.arena.platform.error.ConflictException;
 import com.yanfan.arena.platform.error.ResourceNotFoundException;
 import com.yanfan.arena.platform.player.api.CreatePlayerRequest;
 import com.yanfan.arena.platform.player.api.PlayerResponse;
+import com.yanfan.arena.platform.player.cache.PlayerProfileCache;
+import com.yanfan.arena.platform.player.cache.PlayerProfileChangedEvent;
 import com.yanfan.arena.platform.player.domain.Player;
 import com.yanfan.arena.platform.player.domain.PlayerStatus;
 import com.yanfan.arena.platform.player.persistence.PlayerRepository;
@@ -13,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.Clock;
@@ -22,9 +25,9 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
+// Verify player lifecycle rules and cached profile reads
 @ExtendWith(MockitoExtension.class)
 class PlayerServiceTest {
 
@@ -32,7 +35,13 @@ class PlayerServiceTest {
     PlayerRepository playerRepository;
 
     @Mock
+    PlayerProfileCache playerProfileCache;
+
+    @Mock
     TeamMemberRepository teamMemberRepository;
+
+    @Mock
+    ApplicationEventPublisher eventPublisher;
 
     @Mock
     Clock clock;
@@ -97,9 +106,12 @@ class PlayerServiceTest {
     }
 
     @Test
-    void getReturnsExistingPlayer() {
+    void getLoadsAndCachesPlayerOnCacheMiss() {
         Player player = new Player();
         player.setDisplayName("ArenaExamplePlayer");
+
+        when(playerProfileCache.find(1L))
+                .thenReturn(Optional.empty());
 
         when(playerRepository.findById(1L)).
                 thenReturn(Optional.of(player));
@@ -108,10 +120,15 @@ class PlayerServiceTest {
 
         assertThat(response.displayName())
                 .isEqualTo("ArenaExamplePlayer");
+
+        verify(playerProfileCache).put(response);
     }
 
     @Test
     void getThrowsNotFoundForUnknownPlayer() {
+        when(playerProfileCache.find(99L))
+                .thenReturn(Optional.empty());
+
         when(playerRepository.findById(99L))
                 .thenReturn(Optional.empty());
 
@@ -141,8 +158,12 @@ class PlayerServiceTest {
 
         assertThat(response.status())
                 .isEqualTo(PlayerStatus.RETIRED);
+
         assertThat(player.getRetiredAt())
                 .isEqualTo(Instant.parse("2026-08-09T00:00:00Z"));
+
+        verify(eventPublisher)
+                .publishEvent(new PlayerProfileChangedEvent(1L));
     }
 
     @Test
@@ -179,5 +200,28 @@ class PlayerServiceTest {
 
     }
 
+    @Test
+    void getReturnsCachedPlayerWithoutQueryingDatabase() {
+        PlayerResponse cachedResponse = new PlayerResponse(
+                1L,
+                "CachedPlayer",
+                PlayerStatus.ACTIVE,
+                500L,
+                1,
+                Instant.parse("2026-08-23T00:00:00Z"),
+                Instant.parse("2026-08-23T00:00:00Z")
+        );
+
+        when(playerProfileCache.find(1L))
+                .thenReturn(Optional.of(cachedResponse));
+
+        PlayerResponse response = playerService.get(1L);
+
+        assertThat(response)
+                .isSameAs(cachedResponse);
+
+        // A cache hits should avoid the MySQL read requests
+        verifyNoInteractions(playerRepository);
+    }
 
 }

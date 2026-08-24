@@ -20,3 +20,8 @@ spring:
 
     admin:
       auto-create: false
+
+arena:
+  cache:
+    # Default player cache lifetime for tests
+    player-profile-ttl: 10m
