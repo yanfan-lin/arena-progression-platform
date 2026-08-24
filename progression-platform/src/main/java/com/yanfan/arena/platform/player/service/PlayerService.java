@@ -4,32 +4,46 @@ import com.yanfan.arena.platform.error.ConflictException;
 import com.yanfan.arena.platform.error.ResourceNotFoundException;
 import com.yanfan.arena.platform.player.api.CreatePlayerRequest;
 import com.yanfan.arena.platform.player.api.PlayerResponse;
+import com.yanfan.arena.platform.player.cache.PlayerProfileChangedEvent;
 import com.yanfan.arena.platform.player.domain.Player;
 import com.yanfan.arena.platform.player.domain.PlayerStatus;
 import com.yanfan.arena.platform.player.persistence.PlayerRepository;
 import com.yanfan.arena.platform.team.persistence.TeamMemberRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.dao.DataIntegrityViolationException;
+import com.yanfan.arena.platform.player.cache.PlayerProfileCache;
 
 import java.time.Clock;
+import java.util.Optional;
 
-// Player lifecycle operations
+// Handle player lifecycle and cached profile reads
 @Service
 public class PlayerService {
 
     private final PlayerRepository playerRepository;
 
+    private final PlayerProfileCache playerProfileCache;
+
     private final TeamMemberRepository teamMemberRepository;
+
+    private final ApplicationEventPublisher eventPublisher;
 
     private final Clock clock;
 
-
     @Autowired
-    public PlayerService(PlayerRepository playerRepository, TeamMemberRepository teamMemberRepository, Clock clock) {
+    public PlayerService(PlayerRepository playerRepository,
+                         PlayerProfileCache playerProfileCache,
+                         TeamMemberRepository teamMemberRepository,
+                         ApplicationEventPublisher eventPublisher,
+                         Clock clock)
+    {
         this.playerRepository = playerRepository;
+        this.playerProfileCache = playerProfileCache;
         this.teamMemberRepository = teamMemberRepository;
+        this.eventPublisher = eventPublisher;
         this.clock = clock;
     }
 
@@ -37,7 +51,7 @@ public class PlayerService {
     public PlayerResponse create(CreatePlayerRequest request) {
         String displayName = request.getDisplayName().trim();
 
-        // If the name already exists, stop and return 409
+        // Check whether the name is already used
         if (playerRepository.existsByDisplayNameIgnoreCase(displayName)) {
             throw new ConflictException("PLAYER_NAME_TAKEN",
                     "A player with this display name already exists");
@@ -48,29 +62,40 @@ public class PlayerService {
 
         try {
 
-            // Save the player now: If two requests use the same name at the same time,
-            // the database rejects the second one
             return PlayerResponse.from(playerRepository.saveAndFlush(player));
-        } catch (DataIntegrityViolationException e) {
+        }
+        catch (DataIntegrityViolationException e) {
 
-            // Return 409 if the name was already saved by another request
+            // Handle duplicate request made at the same time
             throw new ConflictException("PLAYER_NAME_TAKEN",
                     "A player with this display name already exists");
         }
-
     }
 
     public PlayerResponse get(Long playerId) {
-        return playerRepository.findById(playerId)
+        Optional<PlayerResponse> cachedResponse =
+                playerProfileCache.find(playerId);
+
+        if (cachedResponse.isPresent()) {
+            return cachedResponse.get();
+        }
+
+        // Redis failures are returned as misses, so this path falls back to MySQL
+        PlayerResponse response = playerRepository.findById(playerId)
                 .map(PlayerResponse::from)
-                .orElseThrow(() -> new ResourceNotFoundException("PLAYER_NOT_FOUND",
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "PLAYER_NOT_FOUND",
                         "Player not found"));
+
+        // Cache the MySQL response for later reads
+        playerProfileCache.put(response);
+
+        return response;
     }
 
     @Transactional
     public PlayerResponse retire(Long playerId) {
-        // Lock the player row so retirement request is separate
-        // from team activation request
+        // Prevent retirement while another request is activating a team with this player
         Player player = playerRepository.findByIdForUpdate(playerId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "PLAYER_NOT_FOUND",
@@ -80,7 +105,6 @@ public class PlayerService {
             throw new ConflictException("PLAYER_RETIRED", "Player is already retired");
         }
 
-        // A player on an active arena team can not retire
         if (teamMemberRepository.countActiveTeamMemberships(playerId) > 0) {
             throw new ConflictException("PLAYER_IN_ACTIVE_TEAM",
                     "Player on an active team can not be retired");
@@ -88,9 +112,14 @@ public class PlayerService {
 
         player.retire(clock.instant());
 
-        // Flush before building the response,
-        // so that @PreUpdate refreshes updatedAt
-        return PlayerResponse.from(playerRepository.saveAndFlush(player));
+        // Flush so @PreUpdate sets updatedAt before building the response
+        PlayerResponse response = PlayerResponse
+                .from(playerRepository.saveAndFlush(player));
+
+        // The listener removes the cache only after the transaction succeeds
+        eventPublisher.publishEvent(new PlayerProfileChangedEvent(playerId));
+
+        return response;
     }
 
 

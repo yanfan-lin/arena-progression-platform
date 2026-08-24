@@ -15,11 +15,13 @@ import com.yanfan.arena.platform.match.persistence.repository.MatchParticipantRe
 import com.yanfan.arena.platform.match.persistence.repository.MatchResultRepository;
 import com.yanfan.arena.platform.match.persistence.repository.MatchTeamResultRepository;
 import com.yanfan.arena.platform.match.persistence.repository.ProcessedEventRepository;
+import com.yanfan.arena.platform.player.cache.PlayerProfileChangedEvent;
 import com.yanfan.arena.platform.player.domain.Player;
 import com.yanfan.arena.platform.player.persistence.PlayerRepository;
 import com.yanfan.arena.platform.team.domain.Team;
 import com.yanfan.arena.platform.team.persistence.TeamRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,21 +30,32 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-// Store one validated match event in the database.
+// Store match results and clear changed player caches after the database commit.
 // Roll back every change if any step fails.
 @Service
 public class MatchProcessor {
 
     private final MatchEventValidator eventValidator;
+
     private final MatchDomainValidator domainValidator;
+
     private final MatchStatisticsValidator statisticsValidator;
+
     private final MatchProgressionCalculator progressionCalculator;
+
     private final ProcessedEventRepository processedEventRepository;
+
     private final MatchResultRepository matchResultRepository;
+
     private final MatchTeamResultRepository matchTeamResultRepository;
+
     private final MatchParticipantResultRepository matchParticipantResultRepository;
+
     private final TeamRepository teamRepository;
+
     private final PlayerRepository playerRepository;
+
+    private final ApplicationEventPublisher eventPublisher;
 
     // Used only by tests to force a rollback right before the commit
     // Volatile because the Kafka listener reads it from a different thread
@@ -63,8 +76,9 @@ public class MatchProcessor {
             MatchTeamResultRepository matchTeamResultRepository,
             MatchParticipantResultRepository matchParticipantResultRepository,
             TeamRepository teamRepository,
-            PlayerRepository playerRepository
-    ) {
+            PlayerRepository playerRepository,
+            ApplicationEventPublisher eventPublisher)
+    {
         this.eventValidator = eventValidator;
         this.domainValidator = domainValidator;
         this.statisticsValidator = statisticsValidator;
@@ -75,6 +89,7 @@ public class MatchProcessor {
         this.matchParticipantResultRepository = matchParticipantResultRepository;
         this.teamRepository = teamRepository;
         this.playerRepository = playerRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     // For test-only: make the next process() call fail right before the transaction commits
@@ -225,6 +240,13 @@ public class MatchProcessor {
             throw new IllegalStateException("Forced failure after match inserts");
         }
 
+        // Remove updated profiles only after this transaction succeeds
+        for (MatchProcessingResult.PlayerResult playerResult : processed.playerResults()) {
+            eventPublisher.publishEvent(
+                    new PlayerProfileChangedEvent(playerResult.playerId())
+            );
+        }
+
         // Step 11
         // Return the summary of changes for later Redis updates
         return new MatchProcessingResult(
@@ -245,6 +267,14 @@ public class MatchProcessor {
                         committedMatchId,
                         matchTeamResultRepository.findTeamIdsByMatchId(committedMatchId),
                         matchParticipantResultRepository.findPlayerIdsByMatchId(committedMatchId));
+
+        // Repeat cache cleanup if the first delivery stopped after saving the match
+        // Player XP and team stats are not updated again
+        for (Long playerId : reconciliation.playerIds()) {
+            eventPublisher.publishEvent(
+                    new PlayerProfileChangedEvent(playerId)
+            );
+        }
 
         return MatchProcessingResult.duplicate(reconciliation);
     }
@@ -270,7 +300,6 @@ public class MatchProcessor {
         );
 
     }
-
 
     // Convert computed team results into entity rows for the snapshot table
     private List<MatchTeamResult> toTeamResultEntities(MatchProcessingResult.ProcessedMatch processed) {

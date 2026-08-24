@@ -40,3 +40,8 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+
+arena:
+  cache:
+    # Remove cached player profiles after ten minutes
+    player-profile-ttl: ${PLAYER_PROFILE_CACHE_TTL:10m}
