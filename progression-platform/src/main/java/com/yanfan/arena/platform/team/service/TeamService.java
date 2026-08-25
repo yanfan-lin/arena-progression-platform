@@ -2,6 +2,7 @@ package com.yanfan.arena.platform.team.service;
 
 import com.yanfan.arena.platform.error.ConflictException;
 import com.yanfan.arena.platform.error.ResourceNotFoundException;
+import com.yanfan.arena.platform.leaderboard.redis.TeamLeaderboardChangedEvent;
 import com.yanfan.arena.platform.player.domain.Player;
 import com.yanfan.arena.platform.player.persistence.PlayerRepository;
 import com.yanfan.arena.platform.player.domain.PlayerStatus;
@@ -15,6 +16,7 @@ import com.yanfan.arena.platform.team.domain.TeamStatus;
 import com.yanfan.arena.platform.team.persistence.TeamMemberRepository;
 import com.yanfan.arena.platform.team.persistence.TeamRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -35,16 +37,21 @@ public class TeamService {
 
     private final Clock clock;
 
+    private final ApplicationEventPublisher eventPublisher;
 
     @Autowired
     // Constructor injection
     public TeamService(TeamRepository teamRepository,
                        TeamMemberRepository teamMemberRepository,
-                       PlayerRepository playerRepository, Clock clock) {
+                       PlayerRepository playerRepository,
+                       Clock clock,
+                       ApplicationEventPublisher eventPublisher)
+    {
         this.teamRepository = teamRepository;
         this.teamMemberRepository = teamMemberRepository;
         this.playerRepository = playerRepository;
         this.clock = clock;
+        this.eventPublisher = eventPublisher;
     }
 
 
@@ -179,7 +186,16 @@ public class TeamService {
 
         team.activate(clock.instant());
 
-        return TeamResponse.from(teamRepository.saveAndFlush(team), rosterPlayerIds);
+        Team savedTeam = teamRepository.saveAndFlush(team);
+
+        // Add the activated team to Redis after MySQL commits
+        eventPublisher.publishEvent(
+                new TeamLeaderboardChangedEvent(
+                        List.of(savedTeam.getTeamId())
+                )
+        );
+
+        return TeamResponse.from(savedTeam, rosterPlayerIds);
 
     }
 
@@ -201,11 +217,16 @@ public class TeamService {
                 .sorted()
                 .toList();
 
-        return TeamResponse.from(teamRepository.saveAndFlush(team), playerIds);
+        Team savedTeam = teamRepository.saveAndFlush(team);
 
+        // Remove the retired team from Redis after MySQL commits
+        eventPublisher.publishEvent(
+                new TeamLeaderboardChangedEvent(
+                        List.of(savedTeam.getTeamId())
+                )
+        );
+
+        return  TeamResponse.from(savedTeam, playerIds);
     }
-
-
-
 
 }

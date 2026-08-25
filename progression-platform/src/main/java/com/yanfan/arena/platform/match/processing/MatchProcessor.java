@@ -20,6 +20,7 @@ import com.yanfan.arena.platform.player.domain.Player;
 import com.yanfan.arena.platform.player.persistence.PlayerRepository;
 import com.yanfan.arena.platform.team.domain.Team;
 import com.yanfan.arena.platform.team.persistence.TeamRepository;
+import com.yanfan.arena.platform.leaderboard.redis.TeamLeaderboardChangedEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -30,7 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-// Store match results and clear changed player caches after the database commit.
+// Process one arena match and store the changes after the match.
 // Roll back every change if any step fails.
 @Service
 public class MatchProcessor {
@@ -247,6 +248,13 @@ public class MatchProcessor {
             );
         }
 
+        // Refresh both teams after the match transaction commits
+        eventPublisher.publishEvent(
+                new TeamLeaderboardChangedEvent(
+                        List.of(teamA.getTeamId(), teamB.getTeamId())
+                )
+        );
+
         // Step 11
         // Return the summary of changes for later Redis updates
         return new MatchProcessingResult(
@@ -275,6 +283,12 @@ public class MatchProcessor {
                     new PlayerProfileChangedEvent(playerId)
             );
         }
+
+        // The first delivery may have committed MySQL but stopped before updating Redis,
+        // refreshing the complete scores again will not count the match twice
+        eventPublisher.publishEvent(
+                new TeamLeaderboardChangedEvent(reconciliation.teamIds())
+        );
 
         return MatchProcessingResult.duplicate(reconciliation);
     }
