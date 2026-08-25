@@ -2,6 +2,7 @@ package com.yanfan.arena.platform.team.service;
 
 import com.yanfan.arena.platform.error.ConflictException;
 import com.yanfan.arena.platform.error.ResourceNotFoundException;
+import com.yanfan.arena.platform.leaderboard.redis.TeamLeaderboardChangedEvent;
 import com.yanfan.arena.platform.player.domain.Player;
 import com.yanfan.arena.platform.player.persistence.PlayerRepository;
 import com.yanfan.arena.platform.player.domain.PlayerStatus;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.Clock;
@@ -43,6 +45,9 @@ class TeamServiceTest {
 
     @Mock
     PlayerRepository playerRepository;
+
+    @Mock
+    ApplicationEventPublisher eventPublisher;
 
     @Mock
     Clock clock;
@@ -225,8 +230,10 @@ class TeamServiceTest {
     }
 
     @Test
-    void activateMarksTeamActiveWithRating() {
+    void activateUpdatesTeamAndPublishesLeaderboardEvent() {
         Team team = new Team();
+
+        team.setTeamId(1L);
         team.setName("ExampleTeam");
         team.setMode(ArenaMode.THREE_VS_THREE);
 
@@ -259,6 +266,9 @@ class TeamServiceTest {
         assertThat(team.getActivatedAt())
                 .isEqualTo(Instant.parse("2026-08-11T00:00:00Z"));
 
+        verify(eventPublisher).publishEvent(
+                new TeamLeaderboardChangedEvent(List.of(1L))
+        );
     }
 
     @Test
@@ -318,8 +328,10 @@ class TeamServiceTest {
     }
 
     @Test
-    void retireMarksTeamAsRetired() {
+    void retireUpdatesTeamAndPublishesLeaderboardEvent() {
         Team team = new Team();
+
+        team.setTeamId(1L);
         team.setName("ExampleTeam");
         team.setMode(ArenaMode.THREE_VS_THREE);
 
@@ -346,6 +358,10 @@ class TeamServiceTest {
                 .isEqualTo(Instant.parse("2026-08-11T00:00:00Z"));
         assertThat(response.playerIds())
                 .containsExactly(10L, 11L, 12L);
+
+        verify(eventPublisher).publishEvent(
+                new TeamLeaderboardChangedEvent(List.of(1L))
+        );
     }
 
     @Test
@@ -368,6 +384,5 @@ class TeamServiceTest {
 
         return member;
     }
-
-
+    
 }
