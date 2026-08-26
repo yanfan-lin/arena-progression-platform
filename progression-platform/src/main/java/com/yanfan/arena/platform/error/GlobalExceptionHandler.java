@@ -20,7 +20,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ProblemDetail handleNotFound(ResourceNotFoundException ex,
-                                        HttpServletRequest request) {
+                                        HttpServletRequest request)
+    {
         return toProblem(
                 HttpStatus.NOT_FOUND,
                 ex.getCode(),
@@ -28,9 +29,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 request);
     }
 
+    @ExceptionHandler(BadRequestException.class)
+    public ProblemDetail handleBadRequest(BadRequestException ex,
+                                          HttpServletRequest request)
+    {
+        return toProblem(
+                HttpStatus.BAD_REQUEST,
+                ex.getCode(),
+                ex.getMessage(),
+                request);
+    }
+
     @ExceptionHandler(ConflictException.class)
     public ProblemDetail handleConflict(ConflictException ex,
-                                        HttpServletRequest request) {
+                                        HttpServletRequest request)
+    {
         return toProblem(
                 HttpStatus.CONFLICT,
                 ex.getCode(),

@@ -3,6 +3,7 @@ package com.yanfan.arena.platform.leaderboard.redis;
 import com.yanfan.arena.platform.leaderboard.TeamLeaderboardMember;
 import com.yanfan.arena.platform.leaderboard.TeamLeaderboardMetric;
 import com.yanfan.arena.platform.leaderboard.TeamLeaderboardScore;
+import com.yanfan.arena.platform.team.domain.ArenaMode;
 import com.yanfan.arena.platform.team.domain.Team;
 import com.yanfan.arena.platform.team.domain.TeamStatus;
 import org.slf4j.Logger;
@@ -12,8 +13,13 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
-// Store current team leaderboard scores in Redis
+
+// Read and update team leaderboard scores in Redis
 @Component
 public class TeamLeaderboardRedisStore {
 
@@ -57,6 +63,75 @@ public class TeamLeaderboardRedisStore {
                     "Failed to update team leaderboard: teamId={} cause={}",
                     team.getTeamId(),
                     exception.getClass().getSimpleName());
+        }
+    }
+
+    public Optional<List<Long>> findTopTeamIds(
+            ArenaMode mode,
+            TeamLeaderboardMetric metric,
+            int limit)
+    {
+        try {
+            // Read members from the highest score downward.
+            Set<String> members =
+                    redisTemplate.opsForZSet().reverseRange(
+                            TeamLeaderboardKey.from(mode, metric),
+                            0,
+                            limit - 1L
+                    );
+
+            if (members == null || members.isEmpty()) {
+                return Optional.empty();
+            }
+
+            List<Long> teamIds = new ArrayList<>(members.size());
+
+            for (String member : members) {
+                teamIds.add(TeamLeaderboardMember.toTeamId(member));
+            }
+
+            return Optional.of(teamIds);
+        }
+        catch (DataAccessException | NumberFormatException exception) {
+            log.warn(
+                    "Failed to read team leaderboard: mode={} metric={} cause={}",
+                    mode,
+                    metric,
+                    exception.getClass().getSimpleName()
+            );
+
+            return Optional.empty();
+        }
+    }
+
+    public Optional<Long> findRank(
+            ArenaMode mode,
+            TeamLeaderboardMetric metric,
+            long teamId)
+    {
+        try {
+            Long zeroBasedRank =
+                    redisTemplate.opsForZSet().reverseRank(
+                            TeamLeaderboardKey.from(mode, metric),
+                            TeamLeaderboardMember.fromTeamId(teamId)
+                    );
+
+            if (zeroBasedRank == null) {
+                return Optional.empty();
+            }
+
+            // Redis starts rank at zero, the API starts at one
+            return Optional.of(zeroBasedRank + 1L);
+        }
+        catch (DataAccessException exception) {
+            log.warn(
+                    "Failed to read team rank: teamId={} metric={} cause={}",
+                    teamId,
+                    metric,
+                    exception.getClass().getSimpleName()
+            );
+
+            return Optional.empty();
         }
     }
 
