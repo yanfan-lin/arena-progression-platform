@@ -19,12 +19,13 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.mysql.MySQLContainer;
 
 import java.util.List;
+import java.util.Optional;
 
 import static com.yanfan.arena.platform.test.IntegrationTestContainers.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 
-// Verify Redis leaderboard scores after committed team updates and retirement.
+// Verify Redis leaderboard reads, committed updates, and retirement cleanup
 @SpringBootTest
 @Testcontainers
 class TeamLeaderboardRedisIT {
@@ -59,6 +60,9 @@ class TeamLeaderboardRedisIT {
 
     @Autowired
     TransactionTemplate transactionTemplate;
+
+    @Autowired
+    TeamLeaderboardRedisStore leaderboardRedisStore;
 
     @BeforeEach
     void setUpTeam() {
@@ -168,6 +172,47 @@ class TeamLeaderboardRedisIT {
 
         assertThat(score(TeamLeaderboardMetric.WIN_RATE))
                 .isNull();
+    }
+
+    // Verify Redis score order, tie order, and exact rank
+    @Test
+    void readsTopTeamsAndExactRank() {
+
+        String key = TeamLeaderboardKey.from(MODE, TeamLeaderboardMetric.RATING);
+
+        redisTemplate.opsForZSet().add(
+                key,
+                TeamLeaderboardMember.fromTeamId(10L),
+                1500);
+
+        // Equal scores place the team with larger ID first
+        redisTemplate.opsForZSet().add(
+                key,
+                TeamLeaderboardMember.fromTeamId(20L),
+                1600);
+
+        redisTemplate.opsForZSet().add(
+                key,
+                TeamLeaderboardMember.fromTeamId(30L),
+                1600);
+
+        Optional<List<Long>> topTeamIds =
+                leaderboardRedisStore.findTopTeamIds(
+                        MODE,
+                        TeamLeaderboardMetric.RATING,
+                        10);
+
+        Optional<Long> teamRank =
+                leaderboardRedisStore.findRank(
+                        MODE,
+                        TeamLeaderboardMetric.RATING,
+                        20L);
+
+        assertThat(topTeamIds)
+                .contains(List.of(30L, 20L, 10L));
+
+        assertThat(teamRank)
+                .contains(2L);
     }
 
     // Publish inside a transaction so the listener runs after its commit
