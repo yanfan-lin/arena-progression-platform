@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -26,6 +27,27 @@ public class TeamLeaderboardRedisStore {
     private static final Logger log =
             LoggerFactory.getLogger(TeamLeaderboardRedisStore.class);
 
+    // Replace every live leaderboard in one Redis operation,
+    // so live keys never contain a mix of old and rebuilt data
+    private static final DefaultRedisScript<Long> REPLACE_LEADERBOARDS_SCRIPT =
+            new DefaultRedisScript<>(
+                    """
+                            -- KEYS contains temporary and live keys in pairs
+                            for i = 1, #KEYS, 2 do
+                                if redis.call('EXISTS', KEYS[i]) == 1 then
+                                    -- A completed temporary key can replace the live key
+                                    redis.call('RENAME', KEYS[i], KEYS[i + 1])
+                                else
+                                    -- Remove old data when this leaderboard has no active teams
+                                    redis.call('DEL', KEYS[i + 1])
+                                end
+                            end
+                            
+                            return 1
+                            """,
+                    Long.class
+            );
+
     private final StringRedisTemplate redisTemplate;
 
     private final TeamLeaderboardProjectionHealth projectionHealth;
@@ -40,14 +62,14 @@ public class TeamLeaderboardRedisStore {
     }
 
     public void update(Team team) {
+
         if (team.getStatus() != TeamStatus.ACTIVE) {
             remove(team);
 
             return;
         }
 
-        String member =
-                TeamLeaderboardMember.fromTeamId(team.getTeamId());
+        String member = TeamLeaderboardMember.fromTeamId(team.getTeamId());
 
         try {
             for (TeamLeaderboardMetric metric : TeamLeaderboardMetric.values()) {
@@ -71,6 +93,109 @@ public class TeamLeaderboardRedisStore {
             log.warn(
                     "Failed to update team leaderboard: teamId={} cause={}",
                     team.getTeamId(),
+                    exception.getClass().getSimpleName());
+        }
+    }
+
+    // Build temporary leaderboards so a failed rebuild leaves live data unchanged
+    public boolean writeTemporaryLeaderboards(List<Team> teams, String rebuildId) {
+        try {
+            // Add each active team to a separate Redis sorted set for every ranking metric
+            for (Team team : teams) {
+                String member = TeamLeaderboardMember.fromTeamId(team.getTeamId());
+
+                for (TeamLeaderboardMetric metric : TeamLeaderboardMetric.values()) {
+                    long score = TeamLeaderboardScore.calculate(
+                            metric,
+                            team.getRating(),
+                            team.getWins(),
+                            team.getMatchesPlayed()
+                    );
+
+                    redisTemplate.opsForZSet().add(
+                            TeamLeaderboardKey.temporaryKey(team.getMode(), metric, rebuildId),
+                            member,
+                            score);
+                }
+            }
+
+            return true;
+        }
+        catch (DataAccessException e) {
+            // Mark Redis unhealthy so leaderboard reads use MySQL
+            projectionHealth.markDegraded();
+
+            log.warn(
+                    "Failed to build temporary team leaderboards: rebuildId={} cause={}",
+                    rebuildId,
+                    e.getClass().getSimpleName());
+
+            return false;
+        }
+    }
+
+    // Replace all live leaderboards only after the temporary data is complete
+    public boolean replaceLiveLeaderboards(String rebuildId) {
+
+        List<String> keys = new ArrayList<>();
+
+        // Include every mode and metric so empty leaderboards also remove stale data
+        for (ArenaMode mode : ArenaMode.values()) {
+            for (TeamLeaderboardMetric metric : TeamLeaderboardMetric.values()) {
+                // Keep each key pair in the order expected by the Lua script
+                keys.add(TeamLeaderboardKey.temporaryKey(mode, metric, rebuildId));
+
+                keys.add(TeamLeaderboardKey.from(mode, metric));
+            }
+        }
+
+        try {
+            // Run the Lua script to replace all live leaderboard keys at the same time
+            Long result = redisTemplate.execute(REPLACE_LEADERBOARDS_SCRIPT, keys);
+
+            if (result != null && result == 1L) {
+                return true;
+            }
+
+            // Mark Redis unhealthy so leaderboard reads use MySQL
+            projectionHealth.markDegraded();
+
+            return false;
+        }
+        catch (DataAccessException exception) {
+            // Mark Redis unhealthy so leaderboard reads use MySQL
+            projectionHealth.markDegraded();
+
+            log.warn(
+                    "Failed to replace live team leaderboards: rebuildId={} cause={}",
+                    rebuildId,
+                    exception.getClass().getSimpleName());
+
+            return false;
+        }
+    }
+
+    // Remove unfinished rebuild data so failed attempts do not leave unused Redis keys
+    public void deleteTemporaryLeaderboards(String rebuildId) {
+        List<String> keys = new ArrayList<>();
+
+        // Collect the temporary key for every mode and ranking metric
+        for (ArenaMode mode : ArenaMode.values()) {
+            for (TeamLeaderboardMetric metric : TeamLeaderboardMetric.values()) {
+                keys.add(TeamLeaderboardKey.temporaryKey(
+                        mode,
+                        metric,
+                        rebuildId));
+            }
+        }
+
+        try {
+            redisTemplate.delete(keys);
+        }
+        catch (DataAccessException exception) {
+            log.warn(
+                    "Failed to delete temporary team leaderboards: rebuildId={} cause={}",
+                    rebuildId,
                     exception.getClass().getSimpleName());
         }
     }
@@ -149,6 +274,8 @@ public class TeamLeaderboardRedisStore {
             return Optional.empty();
         }
     }
+
+
 
     public void remove(Team team) {
         String member =
