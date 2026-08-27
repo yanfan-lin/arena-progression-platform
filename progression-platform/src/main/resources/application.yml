@@ -52,3 +52,10 @@ arena:
   cache:
     # Remove cached player profiles after ten minutes
     player-profile-ttl: ${PLAYER_PROFILE_CACHE_TTL:10m}
+
+management:
+  endpoints:
+    web:
+      # Expose application health and Redis rebuild info
+      exposure:
+        include: health, info

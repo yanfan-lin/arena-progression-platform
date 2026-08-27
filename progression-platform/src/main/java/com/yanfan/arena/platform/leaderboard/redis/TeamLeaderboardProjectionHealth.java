@@ -2,39 +2,93 @@ package com.yanfan.arena.platform.leaderboard.redis;
 
 import com.yanfan.arena.platform.leaderboard.TeamLeaderboardProjectionStatus;
 import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.time.Instant;
+import java.util.Optional;
 
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.yanfan.arena.platform.leaderboard.TeamLeaderboardProjectionStatus.*;
 
-// Manage the health status of the Redis team leaderboard.
+// Track Redis leaderboard health status and rebuild times
 @Component
 public class TeamLeaderboardProjectionHealth {
+
+    private static final Logger log = LoggerFactory.getLogger(TeamLeaderboardProjectionHealth.class);
 
     // Keep status changes safe when multiple threads run at the same time
     // A startup rebuild is required before Redis can serve leaderboard reads
     private final AtomicReference<TeamLeaderboardProjectionStatus> status =
             new AtomicReference<>(DEGRADED);
 
+    private final AtomicReference<Instant> lastFailureAt =  new AtomicReference<>();
+
+    private final AtomicReference<Instant> lastSuccessfulRebuildAt = new AtomicReference<>();
+
     public boolean isHealthy() {
         return status.get() == HEALTHY;
     }
 
-    public boolean isRebuilding() { return status.get() == REBUILDING; }
-
+    // Mark Redis leaderboard data unhealthy and record the failure
     public void markDegraded() {
-        status.set(DEGRADED);
+
+        lastFailureAt.set(Instant.now());
+
+        TeamLeaderboardProjectionStatus oldStatus = status.getAndSet(DEGRADED);
+
+        if (oldStatus != DEGRADED) {
+            log.warn(
+                    "Redis team leaderboard status changed: {} -> {}",
+                    oldStatus,
+                    DEGRADED);
+        }
     }
 
     // Prevent more than one rebuild from running at the same time
     public boolean beginRebuild() {
-        return status.getAndSet(REBUILDING) != REBUILDING;
+        TeamLeaderboardProjectionStatus prevStatus = status.getAndSet(REBUILDING);
+
+        if (prevStatus == REBUILDING) {
+            return false;
+        }
+
+        log.info(
+                "Redis team leaderboard status changed: {} -> {}",
+                prevStatus,
+                REBUILDING);
+
+        return true;
     }
 
     // Mark Redis healthy only if no failure changed the rebuild status,
-    // checking and updating together prevents a concurrent failure from being overwritten
+    // compareAndSet() prevents a concurrent failure from being overwritten
     public boolean completeRebuild() {
-        return status.compareAndSet(REBUILDING, HEALTHY);
+        if (!status.compareAndSet(REBUILDING, HEALTHY)) {
+            return false;
+        }
+
+        lastSuccessfulRebuildAt.set(Instant.now());
+
+        log.info(
+                "Redis team leaderboard status changed: {} -> {}",
+                REBUILDING,
+                HEALTHY);
+
+        return true;
+    }
+
+    public TeamLeaderboardProjectionStatus getStatus() {
+        return status.get();
+    }
+
+    public Optional<Instant> getLastFailureAt() {
+        return Optional.ofNullable(lastFailureAt.get());
+    }
+
+    public Optional<Instant> getLastSuccessfulRebuildAt() {
+        return Optional.ofNullable(lastSuccessfulRebuildAt.get());
     }
 
 }
