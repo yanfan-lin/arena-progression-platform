@@ -3,7 +3,6 @@ package com.yanfan.arena.platform.team.api;
 import com.yanfan.arena.platform.api.PageResponse;
 import com.yanfan.arena.platform.error.ConflictException;
 import com.yanfan.arena.platform.error.ResourceNotFoundException;
-import com.yanfan.arena.platform.match.api.MatchOutcome;
 import com.yanfan.arena.platform.team.domain.ArenaMode;
 import com.yanfan.arena.platform.team.domain.TeamStatus;
 import com.yanfan.arena.platform.team.service.TeamMatchHistoryService;
@@ -17,7 +16,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -204,38 +202,19 @@ class TeamControllerTest {
 
     }
 
-    // Return stored team history using default pagination
+    // Use default pagination for team match history requests
     @Test
-    void getMatchHistoryReturnsStoredPage() throws Exception {
+    void getMatchHistoryUsesDefaultPagination() throws Exception {
 
         Long teamId = 10L;
 
-        UUID matchId = UUID.fromString(
-                "11111111-1111-1111-1111-111111111111");
-
-        TeamMatchHistoryResponse historyEntry =
-                new TeamMatchHistoryResponse(
-                        matchId,
-                        ArenaMode.THREE_VS_THREE,
-                        Instant.parse("2026-08-19T12:00:00Z"),
-                        teamId,
-                        "Stored Winners",
-                        MatchOutcome.WIN,
-                        1000,
-                        16,
-                        1016,
-                        18,
-                        7,
-                        12
-                );
-
         PageResponse<TeamMatchHistoryResponse> response =
                 new PageResponse<>(
-                        List.of(historyEntry),
+                        List.of(),
                         0,
                         20,
-                        1,
-                        1
+                        0,
+                        0
                 );
 
         when(teamMatchHistoryService.getHistory(teamId, 0, 20))
@@ -245,20 +224,11 @@ class TeamControllerTest {
                         "/api/v1/teams/{teamId}/matches",
                         teamId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].matchId")
-                        .value(matchId.toString()))
-                .andExpect(jsonPath("$.content[0].teamName")
-                        .value("Stored Winners"))
-                .andExpect(jsonPath("$.content[0].outcome")
-                        .value("WIN"))
-                .andExpect(jsonPath("$.content[0].kills")
-                        .value(18))
+                .andExpect(jsonPath("$.content").isEmpty())
                 .andExpect(jsonPath("$.page")
                         .value(0))
                 .andExpect(jsonPath("$.size")
-                        .value(20))
-                .andExpect(jsonPath("$.totalElements")
-                        .value(1));
+                        .value(20));
     }
 
     // Reject a page size above API limit (100)

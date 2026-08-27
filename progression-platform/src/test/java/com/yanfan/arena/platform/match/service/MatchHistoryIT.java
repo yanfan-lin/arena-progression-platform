@@ -1,12 +1,16 @@
-package com.yanfan.arena.platform.match.persistence.repository;
+package com.yanfan.arena.platform.match.service;
 
+import com.yanfan.arena.platform.api.PageResponse;
+import com.yanfan.arena.platform.match.api.MatchOutcome;
+import com.yanfan.arena.platform.player.api.PlayerMatchHistoryResponse;
+import com.yanfan.arena.platform.player.service.PlayerMatchHistoryService;
 import com.yanfan.arena.platform.team.domain.ArenaMode;
+import com.yanfan.arena.platform.team.api.TeamMatchHistoryResponse;
+import com.yanfan.arena.platform.team.service.TeamMatchHistoryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -16,16 +20,17 @@ import org.testcontainers.mysql.MySQLContainer;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.UUID;
 
 import static com.yanfan.arena.platform.match.processing.MatchProcessorTestData.*;
 import static com.yanfan.arena.platform.test.IntegrationTestContainers.mysqlContainer;
 import static com.yanfan.arena.platform.test.IntegrationTestContainers.registerMySqlProperties;
 import static org.assertj.core.api.Assertions.assertThat;
 
-// Verify the match history queries against MySQL
+// Verify match history services against MySQL
 @SpringBootTest
 @Testcontainers
-class MatchHistoryQueryIT {
+class MatchHistoryIT {
 
     @Container
     static final MySQLContainer MYSQL = mysqlContainer();
@@ -39,10 +44,10 @@ class MatchHistoryQueryIT {
     JdbcTemplate jdbcTemplate;
 
     @Autowired
-    MatchTeamResultRepository matchTeamResultRepository;
+    PlayerMatchHistoryService playerMatchHistoryService;
 
     @Autowired
-    MatchParticipantResultRepository matchParticipantResultRepository;
+    TeamMatchHistoryService teamMatchHistoryService;
 
     @BeforeEach
     void cleanTables() {
@@ -63,20 +68,6 @@ class MatchHistoryQueryIT {
                 jdbcTemplate,
                 102L,
                 "Current Alpha Two",
-                500L
-        );
-
-        insertPlayer(
-                jdbcTemplate,
-                201L,
-                "Current Beta One",
-                500L
-        );
-
-        insertPlayer(
-                jdbcTemplate,
-                202L,
-                "Current Beta Two",
                 500L
         );
 
@@ -178,28 +169,6 @@ class MatchHistoryQueryIT {
         );
 
         insertParticipant(
-                lowerMatchId,
-                201L,
-                2L,
-                "Stored Beta One Old",
-                1,
-                4,
-                1,
-                100
-        );
-
-        insertParticipant(
-                lowerMatchId,
-                202L,
-                2L,
-                "Stored Beta Two Old",
-                2,
-                3,
-                1,
-                100
-        );
-
-        insertParticipant(
                 higherMatchId,
                 101L,
                 1L,
@@ -221,81 +190,54 @@ class MatchHistoryQueryIT {
                 100
         );
 
-        insertParticipant(
-                higherMatchId,
-                201L,
-                2L,
-                "Stored Beta One New",
-                3,
-                4,
-                2,
-                150
-        );
+        PageResponse<PlayerMatchHistoryResponse> playerHistory =
+                playerMatchHistoryService.getHistory(101L, 0, 1);
 
-        insertParticipant(
-                higherMatchId,
-                202L,
-                2L,
-                "Stored Beta Two New",
-                2,
-                3,
-                1,
-                150
-        );
-
-        PageRequest firstResultOnly =
-                PageRequest.of(0, 1);
-
-        Page<PlayerMatchHistoryProjection> playerHistory =
-                matchParticipantResultRepository.findHistoryByPlayerId(
-                        101L,
-                        firstResultOnly
-                );
-
-        assertThat(playerHistory.getTotalElements())
+        assertThat(playerHistory.totalElements())
                 .isEqualTo(2);
-        assertThat(playerHistory.getTotalPages())
+        assertThat(playerHistory.totalPages())
                 .isEqualTo(2);
 
-        PlayerMatchHistoryProjection playerResult =
-                playerHistory.getContent().getFirst();
+        PlayerMatchHistoryResponse playerResult =
+                playerHistory.content().getFirst();
 
-        assertThat(playerResult.getMatchId())
-                .isEqualTo(higherMatchId);
-        assertThat(playerResult.getPlayerName())
+        assertThat(playerResult.matchId())
+                .isEqualTo(UUID.fromString(higherMatchId));
+        assertThat(playerResult.playerName())
                 .isEqualTo("Stored Alpha One New");
-        assertThat(playerResult.getTeamName())
+        assertThat(playerResult.teamName())
                 .isEqualTo("Stored Alpha New");
-        assertThat(playerResult.getRatingBefore())
+        assertThat(playerResult.outcome())
+                .isEqualTo(MatchOutcome.LOSS);
+        assertThat(playerResult.ratingBefore())
                 .isEqualTo(1016);
-        assertThat(playerResult.getXpEarned())
+        assertThat(playerResult.xpEarned())
                 .isEqualTo(100);
 
-        Page<TeamMatchHistoryProjection> teamHistory =
-                matchTeamResultRepository.findHistoryByTeamId(
-                        1L,
-                        firstResultOnly
-                );
+        PageResponse<TeamMatchHistoryResponse> teamHistory =
+                teamMatchHistoryService.getHistory(1L, 0, 1);
 
-        assertThat(teamHistory.getTotalElements())
+        assertThat(teamHistory.totalElements())
                 .isEqualTo(2);
-        assertThat(teamHistory.getTotalPages())
+        assertThat(teamHistory.totalPages())
                 .isEqualTo(2);
 
-        TeamMatchHistoryProjection teamResult =
-                teamHistory.getContent().getFirst();
+        TeamMatchHistoryResponse teamResult =
+                teamHistory.content().getFirst();
 
-        assertThat(teamResult.getMatchId())
-                .isEqualTo(higherMatchId);
-        assertThat(teamResult.getTeamName())
+        assertThat(teamResult.matchId())
+                .isEqualTo(UUID.fromString(higherMatchId));
+        assertThat(teamResult.teamName())
                 .isEqualTo("Stored Alpha New");
-        assertThat(teamResult.getRatingChange())
+        assertThat(teamResult.outcome())
+                .isEqualTo(MatchOutcome.LOSS);
+        assertThat(teamResult.ratingChange())
                 .isEqualTo(-15);
-        assertThat(teamResult.getKills())
+        assertThat(teamResult.kills())
                 .isEqualTo(7);
-        assertThat(teamResult.getDeaths())
+        assertThat(teamResult.deaths())
                 .isEqualTo(5);
-        assertThat(teamResult.getAssists())
+        assertThat(teamResult.assists())
                 .isEqualTo(5);
     }
 
