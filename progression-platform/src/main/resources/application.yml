@@ -42,6 +42,13 @@ spring:
       port: ${REDIS_PORT:6379}
 
 arena:
+  leaderboard:
+    # Rebuild Redis automatically after startup or failure
+    rebuild-enabled: ${LEADERBOARD_REBUILD_ENABLED:true}
+
+    # Wait this long before retrying a failed rebuild
+    rebuild-retry-delay: ${LEADERBOARD_REBUILD_RETRY_DELAY:30s}
+
   cache:
     # Remove cached player profiles after ten minutes
     player-profile-ttl: ${PLAYER_PROFILE_CACHE_TTL:10m}

@@ -25,3 +25,7 @@ arena:
   cache:
     # Default player cache lifetime for tests
     player-profile-ttl: 10m
+
+  leaderboard:
+    # Prevent background rebuilds from changing unrelated integration tests
+    rebuild-enabled: false
