@@ -19,7 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 
 
-// Read and update team leaderboard scores in Redis
+// Read and update Redis team leaderboards and report Redis failures
 @Component
 public class TeamLeaderboardRedisStore {
 
@@ -28,9 +28,15 @@ public class TeamLeaderboardRedisStore {
 
     private final StringRedisTemplate redisTemplate;
 
+    private final TeamLeaderboardProjectionHealth projectionHealth;
+
     @Autowired
-    public TeamLeaderboardRedisStore(StringRedisTemplate redisTemplate) {
+    public TeamLeaderboardRedisStore(
+            StringRedisTemplate redisTemplate,
+            TeamLeaderboardProjectionHealth projectionHealth)
+    {
         this.redisTemplate = redisTemplate;
+        this.projectionHealth = projectionHealth;
     }
 
     public void update(Team team) {
@@ -59,6 +65,9 @@ public class TeamLeaderboardRedisStore {
             }
         }
         catch (DataAccessException exception) {
+            // Mark Redis as degraded
+            projectionHealth.markDegraded();
+
             log.warn(
                     "Failed to update team leaderboard: teamId={} cause={}",
                     team.getTeamId(),
@@ -93,6 +102,9 @@ public class TeamLeaderboardRedisStore {
             return Optional.of(teamIds);
         }
         catch (DataAccessException | NumberFormatException exception) {
+            // Mark Redis as degraded
+            projectionHealth.markDegraded();
+
             log.warn(
                     "Failed to read team leaderboard: mode={} metric={} cause={}",
                     mode,
@@ -124,6 +136,9 @@ public class TeamLeaderboardRedisStore {
             return Optional.of(zeroBasedRank + 1L);
         }
         catch (DataAccessException exception) {
+            // Mark Redis as degraded
+            projectionHealth.markDegraded();
+
             log.warn(
                     "Failed to read team rank: teamId={} metric={} cause={}",
                     teamId,
@@ -147,6 +162,9 @@ public class TeamLeaderboardRedisStore {
             }
         }
         catch (DataAccessException exception) {
+            // Mark Redis as degraded
+            projectionHealth.markDegraded();
+
             log.warn(
                     "Failed to remove team from leaderboard: teamId={} cause={}",
                     team.getTeamId(),

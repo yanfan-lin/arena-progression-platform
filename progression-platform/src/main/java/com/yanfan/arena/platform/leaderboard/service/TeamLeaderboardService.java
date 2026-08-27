@@ -5,6 +5,7 @@ import com.yanfan.arena.platform.error.ResourceNotFoundException;
 import com.yanfan.arena.platform.leaderboard.TeamLeaderboardMetric;
 import com.yanfan.arena.platform.leaderboard.api.TeamLeaderboardEntryResponse;
 import com.yanfan.arena.platform.leaderboard.api.TeamLeaderboardResponse;
+import com.yanfan.arena.platform.leaderboard.redis.TeamLeaderboardProjectionHealth;
 import com.yanfan.arena.platform.leaderboard.redis.TeamLeaderboardRedisStore;
 import com.yanfan.arena.platform.team.domain.ArenaMode;
 import com.yanfan.arena.platform.team.domain.Team;
@@ -30,15 +31,19 @@ public class TeamLeaderboardService {
 
     private final TeamRepository teamRepository;
 
+    private final TeamLeaderboardProjectionHealth projectionHealth;
+
     @Autowired
     public TeamLeaderboardService(
             TeamLeaderboardRedisStore redisStore,
             TeamLeaderboardFallbackService fallbackService,
-            TeamRepository teamRepository)
+            TeamRepository teamRepository,
+            TeamLeaderboardProjectionHealth projectionHealth)
     {
         this.redisStore = redisStore;
         this.fallbackService = fallbackService;
         this.teamRepository = teamRepository;
+        this.projectionHealth = projectionHealth;
     }
 
     // Return top teams in Redis order, or
@@ -49,6 +54,11 @@ public class TeamLeaderboardService {
             int limit)
     {
         validateLimit(limit);
+
+        // Skip Redis reads while the leaderboard data is unhealthy
+        if (!projectionHealth.isHealthy()) {
+            return fallbackService.getTop(mode, metric, limit);
+        }
 
         Optional<List<Long>> redisTeamIds =
                 redisStore.findTopTeamIds(mode, metric, limit);
@@ -97,6 +107,11 @@ public class TeamLeaderboardService {
             Long teamId,
             TeamLeaderboardMetric metric)
     {
+        // Skip Redis reads if the leaderboard data is unhealthy
+        if (!projectionHealth.isHealthy()) {
+            return fallbackService.getRank(teamId, metric);
+        }
+
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "TEAM_NOT_FOUND",
