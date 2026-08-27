@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.core.Cursor;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 import tools.jackson.core.JacksonException;
@@ -92,6 +94,29 @@ public class PlayerProfileCache {
                     playerId,
                     exception.getClass().getSimpleName()
             );
+        }
+    }
+
+    // Clear cached profiles so future reads reload current MySQL data
+    public boolean clearAll() {
+        try (Cursor<String> cursor = redisTemplate.scan(
+                ScanOptions.scanOptions()
+                        .match(KEY_PREFIX + "*")
+                        .build())
+            )
+        {
+            while (cursor.hasNext()) {
+                redisTemplate.delete(cursor.next());
+            }
+
+            return true;
+        }
+        catch (DataAccessException ex) {
+            log.warn(
+                    "Failed to clear player profile cache: cause={}",
+                    ex.getClass().getSimpleName());
+
+            return false;
         }
     }
 
