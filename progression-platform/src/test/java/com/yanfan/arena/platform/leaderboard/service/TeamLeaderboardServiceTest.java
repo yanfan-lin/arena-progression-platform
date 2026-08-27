@@ -4,11 +4,13 @@ import com.yanfan.arena.platform.error.BadRequestException;
 import com.yanfan.arena.platform.leaderboard.TeamLeaderboardMetric;
 import com.yanfan.arena.platform.leaderboard.api.TeamLeaderboardEntryResponse;
 import com.yanfan.arena.platform.leaderboard.api.TeamLeaderboardResponse;
+import com.yanfan.arena.platform.leaderboard.redis.TeamLeaderboardProjectionHealth;
 import com.yanfan.arena.platform.leaderboard.redis.TeamLeaderboardRedisStore;
 import com.yanfan.arena.platform.team.domain.ArenaMode;
 import com.yanfan.arena.platform.team.domain.Team;
 import com.yanfan.arena.platform.team.domain.TeamStatus;
 import com.yanfan.arena.platform.team.persistence.TeamRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,8 +22,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 // Verify Redis leaderboard reads and MySQL fallback.
 @ExtendWith(MockitoExtension.class)
@@ -36,8 +37,18 @@ class TeamLeaderboardServiceTest {
     @Mock
     TeamRepository teamRepository;
 
+    @Mock
+    TeamLeaderboardProjectionHealth projectionHealth;
+
     @InjectMocks
     TeamLeaderboardService teamLeaderboardService;
+
+    // Mock Redis as healthy so Redis tests do not use the MySQL fallback
+    @BeforeEach
+    void setUpHealthyRedisProjection() {
+        lenient().when(projectionHealth.isHealthy())
+                .thenReturn(true);
+    }
 
     // Keep Redis ranking order after loading team details from MySQL
     @Test
