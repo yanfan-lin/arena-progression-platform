@@ -21,3 +21,4 @@ An event-driven game backend for match processing, player progression, team rati
 | 7         | Kafka consumption, retries, DLT, and redelivery | Done|
 | 8         | Match details and match history | Done |
 | 9         | Redis player cache and team leaderboards | Done |
+| 10        | Redis leaderboard recovery and health monitoring | Done |
