@@ -23,9 +23,10 @@ public class TeamLeaderboardProjectionHealth {
     private final AtomicReference<TeamLeaderboardProjectionStatus> status =
             new AtomicReference<>(DEGRADED);
 
-    private final AtomicReference<Instant> lastFailureAt =  new AtomicReference<>();
+    // Keep timestamp updates visible across threads
+    private volatile Instant lastFailureAt;
 
-    private final AtomicReference<Instant> lastSuccessfulRebuildAt = new AtomicReference<>();
+    private volatile Instant lastSuccessfulRebuildAt;
 
     public boolean isHealthy() {
         return status.get() == HEALTHY;
@@ -34,7 +35,7 @@ public class TeamLeaderboardProjectionHealth {
     // Mark Redis leaderboard data unhealthy and record the failure
     public void markDegraded() {
 
-        lastFailureAt.set(Instant.now());
+        lastFailureAt = Instant.now();
 
         TeamLeaderboardProjectionStatus oldStatus = status.getAndSet(DEGRADED);
 
@@ -69,7 +70,7 @@ public class TeamLeaderboardProjectionHealth {
             return false;
         }
 
-        lastSuccessfulRebuildAt.set(Instant.now());
+        lastSuccessfulRebuildAt =  Instant.now();
 
         log.info(
                 "Redis team leaderboard status changed: {} -> {}",
@@ -84,11 +85,11 @@ public class TeamLeaderboardProjectionHealth {
     }
 
     public Optional<Instant> getLastFailureAt() {
-        return Optional.ofNullable(lastFailureAt.get());
+        return Optional.ofNullable(lastFailureAt);
     }
 
     public Optional<Instant> getLastSuccessfulRebuildAt() {
-        return Optional.ofNullable(lastSuccessfulRebuildAt.get());
+        return Optional.ofNullable(lastSuccessfulRebuildAt);
     }
 
 }
