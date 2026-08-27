@@ -17,23 +17,35 @@ public class TeamLeaderboardRedisListener {
 
     private final TeamLeaderboardRedisStore leaderboardStore;
 
+    private final TeamLeaderboardProjectionLock projectionLock;
+
     @Autowired
     public TeamLeaderboardRedisListener(
             TeamRepository teamRepository,
-            TeamLeaderboardRedisStore leaderboardStore)
+            TeamLeaderboardRedisStore leaderboardStore,
+            TeamLeaderboardProjectionLock projectionLock)
     {
         this.teamRepository = teamRepository;
         this.leaderboardStore = leaderboardStore;
+        this.projectionLock = projectionLock;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void refreshChangedTeams(TeamLeaderboardChangedEvent event) {
-        // Reload the final values stored by the committed transaction
-        List<Team> teams =
-                teamRepository.findAllById(event.teamIds());
+        // Lock to prevent this update from running
+        // in the middle of a leaderboard rebuild
+        projectionLock.lock();
 
-        for (Team team : teams) {
-            leaderboardStore.update(team);
+        try {
+            List<Team> teams = teamRepository.findAllById(event.teamIds());
+
+            for (Team team : teams) {
+                leaderboardStore.update(team);
+            }
+        }
+        finally {
+            // Unlock even if the update fails
+            projectionLock.unlock();
         }
     }
 
