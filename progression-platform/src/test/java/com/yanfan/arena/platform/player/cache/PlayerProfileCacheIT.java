@@ -53,7 +53,8 @@ class PlayerProfileCacheIT {
     }
 
     @Test
-    void storesAndReadsProfileWithTenMinuteTtl() {
+    void storesReadsAndEvictsProfileWithTenMinuteTtl() {
+
         PlayerResponse response = playerResponse();
 
         playerProfileCache.put(response);
@@ -64,11 +65,6 @@ class PlayerProfileCacheIT {
         // Redis reports the remaining TTL in seconds
         assertThat(redisTemplate.getExpire(CACHE_KEY))
                 .isBetween(1L, 600L);
-    }
-
-    @Test
-    void evictRemovesCachedProfile() {
-        playerProfileCache.put(playerResponse());
 
         playerProfileCache.evict(PLAYER_ID);
 
