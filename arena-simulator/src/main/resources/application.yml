@@ -4,3 +4,8 @@ server:
 spring:
   application:
     name: arena-simulator
+
+arena:
+  simulator:
+    platform:
+      base-url: ${PLATFORM_BASE_URL:http://localhost:8081}
