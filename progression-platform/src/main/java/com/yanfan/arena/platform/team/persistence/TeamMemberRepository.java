@@ -32,6 +32,6 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
             """)
     long countActiveMemberships(Collection<Long> playerIds, ArenaMode mode);
 
-
+    List<TeamMember> findAllByTeamIdInOrderByTeamIdAscPlayerIdAsc(Collection<Long> teamIds);
 
 }

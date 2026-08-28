@@ -21,4 +21,6 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
 
     List<Team> findAllByStatus(TeamStatus status);
 
+    List<Team> findAllByModeAndStatusOrderByTeamIdAsc(ArenaMode mode, TeamStatus status);
+
 }

@@ -7,6 +7,7 @@ import com.yanfan.arena.platform.player.domain.Player;
 import com.yanfan.arena.platform.player.persistence.PlayerRepository;
 import com.yanfan.arena.platform.player.domain.PlayerStatus;
 import com.yanfan.arena.platform.team.api.CreateTeamRequest;
+import com.yanfan.arena.platform.team.api.MatchCandidateResponse;
 import com.yanfan.arena.platform.team.api.ReplaceRosterRequest;
 import com.yanfan.arena.platform.team.api.TeamResponse;
 import com.yanfan.arena.platform.team.domain.ArenaMode;
@@ -23,7 +24,10 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 // Team lifecycle operations
 @Service
@@ -95,6 +99,49 @@ public class TeamService {
                 .toList();
 
         return TeamResponse.from(team, playerIds);
+    }
+
+    @Transactional(readOnly = true)
+    public List<MatchCandidateResponse> getMatchCandidates(ArenaMode mode) {
+
+        // Load all active teams from the requested arena mode
+        List<Team> teams =
+                teamRepository.findAllByModeAndStatusOrderByTeamIdAsc(mode, TeamStatus.ACTIVE);
+
+        if (teams.isEmpty()) {
+            return List.of();
+        }
+
+        // Collect team IDs for roster query
+        List<Long> teamIds = teams.stream()
+                .map(Team::getTeamId)
+                .toList();
+
+        // Load all rosters together to avoid a separate database query for every team
+        List<TeamMember> teamMembers =
+                teamMemberRepository.findAllByTeamIdInOrderByTeamIdAscPlayerIdAsc(teamIds);
+
+        Map<Long, List<Long>> playerIdsByTeam = new HashMap<>();
+
+        // Group player IDs by team ID
+        for (TeamMember member : teamMembers) {
+            playerIdsByTeam.computeIfAbsent(member.getTeamId(), teamId -> new ArrayList<>())
+                    .add(member.getPlayerId());
+        }
+
+        List<MatchCandidateResponse> candidates = new ArrayList<>();
+
+        // Combine each team with its grouped roster
+        for (Team team : teams) {
+            candidates.add(new MatchCandidateResponse(
+                    team.getTeamId(),
+                    team.getMode(),
+                    team.getActivatedAt(),
+                    playerIdsByTeam.getOrDefault(team.getTeamId(), List.of())
+            ));
+        }
+
+        return candidates;
     }
 
     @Transactional
