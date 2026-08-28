@@ -9,8 +9,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-// Version 1 of the wire contract for a completed arena match
-// Kafka Producers publish it, then platform consumes and validates it
+// Versioned completed-match event shared by the simulator and platform
 public record ArenaMatchCompleted(
         @NotNull Integer contractVersion,
         @NotNull UUID eventId,
@@ -22,14 +21,14 @@ public record ArenaMatchCompleted(
 
     public static final int CONTRACT_VERSION = 1;
 
-    // Participating team with roster for this match
+    // One participating team and its match roster
     public record Team(
             @Min(1) long teamId,
             @NotNull @Size(min = 1, max = 5) List<@NotNull @Valid Player> participants) {
 
     }
 
-    // Player's statistics(Kills, deaths, and assists) in the match
+    // One player's kills, deaths, and assists for the match
     public record Player(
             @Min(1) long playerId,
             @NotNull @Min(0) Integer kills,

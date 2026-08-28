@@ -1,6 +1,6 @@
 package com.yanfan.arena.contract;
 
-// Kafka topic names shared by both the platform (consumer) and the arena simulator (producer)
+// Kafka topic names shared by the simulator and platform
 public final class KafkaTopics {
 
     // Topic where completed match events arrive
