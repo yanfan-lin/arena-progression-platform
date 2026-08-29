@@ -5,7 +5,19 @@ spring:
   application:
     name: arena-simulator
 
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+      # Wait for Kafka to confirm the match record before reporting publish success
+      acks: all
+      properties:
+        # Prevent Kafka retries from creating duplicate match records
+        enable.idempotence: true
+
 arena:
   simulator:
     platform:
       base-url: ${PLATFORM_BASE_URL:http://localhost:8081}
+
