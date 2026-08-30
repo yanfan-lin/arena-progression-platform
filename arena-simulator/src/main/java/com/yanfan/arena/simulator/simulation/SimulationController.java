@@ -4,6 +4,7 @@ import com.yanfan.arena.contract.ArenaMatchCompleted;
 import com.yanfan.arena.contract.MatchMode;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 // Expose simulation controls through REST
@@ -17,12 +18,16 @@ public class SimulationController {
     // Generate matches and publish them to Kafka
     private final MatchSimulationService matchSimulationService;
 
+    private final SimulationRunService simulationRunService;
+
     @Autowired
     public SimulationController(SimulationSetupService simulationSetupService,
-                                MatchSimulationService matchSimulationService)
+                                MatchSimulationService matchSimulationService,
+                                SimulationRunService simulationRunService)
     {
         this.simulationSetupService = simulationSetupService;
         this.matchSimulationService = matchSimulationService;
+        this.simulationRunService = simulationRunService;
     }
 
     @PostMapping("/setup")
@@ -37,5 +42,24 @@ public class SimulationController {
 
         return matchSimulationService.simulateMatch(mode);
     }
+
+    @PostMapping("/runs")
+    public ResponseEntity<SimulationRunResponse> startRun(
+            @Valid @RequestBody SimulationRunRequest request)
+    {
+        return ResponseEntity.accepted()
+                .body(simulationRunService.startRun(request));
+    }
+
+    @GetMapping("/runs/current")
+    public SimulationRunResponse getCurrentRun()  {
+        return simulationRunService.getCurrentRun();
+    }
+
+    @DeleteMapping("/runs/current")
+    public SimulationRunResponse stopRun() {
+        return simulationRunService.stopCurrentRun();
+    }
+
 
 }
