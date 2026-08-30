@@ -39,8 +39,7 @@ public class MatchGenerator {
         List<MatchCandidateResponse> candidates = platformClient.getMatchCandidates(mode);
 
         if (candidates.size() < 2) {
-            throw new IllegalStateException(
-                    "At least two teams are required for mode: " + mode);
+            throw new InsufficientTeamsException(mode);
         }
 
         // Randomly select the first team from the active team candidates
