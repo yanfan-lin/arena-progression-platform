@@ -1,7 +1,8 @@
-package com.yanfan.arena.simulator.simulation;
+package com.yanfan.arena.simulator.simulation.run;
 
 import com.yanfan.arena.contract.ArenaMatchCompleted;
 import com.yanfan.arena.contract.MatchMode;
+import com.yanfan.arena.simulator.simulation.match.MatchSimulationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

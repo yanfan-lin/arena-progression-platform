@@ -1,4 +1,4 @@
-package com.yanfan.arena.simulator.simulation;
+package com.yanfan.arena.simulator.simulation.setup;
 
 import com.yanfan.arena.contract.MatchMode;
 import jakarta.validation.constraints.Max;

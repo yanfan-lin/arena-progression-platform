@@ -1,4 +1,4 @@
-package com.yanfan.arena.simulator.simulation;
+package com.yanfan.arena.simulator.simulation.run;
 
 // Represent the current state of a continuous match simulation run
 public enum SimulationRunState {

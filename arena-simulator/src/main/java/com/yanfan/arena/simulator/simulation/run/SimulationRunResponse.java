@@ -1,4 +1,4 @@
-package com.yanfan.arena.simulator.simulation;
+package com.yanfan.arena.simulator.simulation.run;
 
 import com.yanfan.arena.contract.MatchMode;
 
