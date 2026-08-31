@@ -23,3 +23,4 @@ An event-driven game backend for match processing, player progression, team rati
 | 9         | Redis player cache and team leaderboards | Done |
 | 10        | Redis leaderboard recovery and health monitoring | Done |
 | 11 | Arena match simulator and scheduled runs | Done |
+| 12 | Request tracing, logs, and metrics | Done |
