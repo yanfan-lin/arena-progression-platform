@@ -1,4 +1,3 @@
-# 8081 is the local default
 server:
   port: ${PROGRESSION_SERVER_PORT:8081}
 
@@ -53,9 +52,14 @@ arena:
     # Remove cached player profiles after ten minutes
     player-profile-ttl: ${PLAYER_PROFILE_CACHE_TTL:10m}
 
+logging:
+  pattern:
+    # Include request or Kafka details when they are available
+    level: "%5p %X"
+
 management:
   endpoints:
     web:
-      # Expose application health and Redis rebuild info
+      # Expose health, Redis rebuild info and application metrics
       exposure:
-        include: health, info
+        include: health, info, metrics

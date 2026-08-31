@@ -8,6 +8,7 @@ import com.yanfan.arena.platform.match.validation.MatchEventValidationException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
@@ -27,29 +28,48 @@ public class MatchEventListener {
 
     @KafkaListener(topics = KafkaTopics.MATCH_COMPLETED, groupId = "${spring.kafka.consumer.group-id}")
     public void onMatchEvent(ConsumerRecord<String, ArenaMatchCompleted> record) {
-        // The value is a completed match event
-        ArenaMatchCompleted event = record.value();
 
-        // Reject a missing event before reading its fields
-        if (event == null) {
-            throw new MatchEventValidationException("Match event is missing");
+        // Add record details to logs for this delivery
+        MDC.put("topic", record.topic());
+        MDC.put("partition", Integer.toString(record.partition()));
+        MDC.put("offset", Long.toString(record.offset()));
+
+        try {
+            // The value is a completed match event
+            ArenaMatchCompleted event = record.value();
+
+            if (event == null) {
+                throw new MatchEventValidationException(
+                        "Match event is missing");
+            }
+
+            // Add event IDs to match processing logs
+            MDC.put("eventId", String.valueOf(event.eventId()));
+            MDC.put("matchId", String.valueOf(event.matchId()));
+
+            // Reject a missing match ID before comparing it to the Kafka key
+            if (event.matchId() == null) {
+                throw new MatchEventValidationException(
+                        "Match event ID is missing");
+            }
+
+            // Reject a record whose key does not match the match ID
+            if (!event.matchId().toString().equals(record.key())) {
+                throw new MatchEventValidationException(
+                        "Kafka key does not match the match event ID");
+            }
+
+            // Pass the event to the processor
+            MatchProcessingResult result = matchProcessor.process(event);
+
+            LOGGER.info(
+                    "Processed match outcome={}",
+                    result.outcome());
         }
-
-        // Reject a missing match ID before comparing it to the Kafka key
-        if (event.matchId() == null) {
-            throw new MatchEventValidationException("Match event ID is missing");
+        finally {
+            // Remove the record details before handling another record
+            MDC.clear();
         }
-
-        // Reject a record whose key does not match the event ID
-        if (!event.matchId().toString().equals(record.key())) {
-            throw new MatchEventValidationException("Kafka key does not match the match event ID");
-        }
-
-        // Pass the event to the processor
-        MatchProcessingResult result = matchProcessor.process(event);
-
-        LOGGER.info("Processed match event {} outcome={}", event.eventId(), result.outcome());
     }
-
 
 }

@@ -2,6 +2,8 @@ package com.yanfan.arena.platform.error;
 
 import com.yanfan.arena.platform.config.RequestIdFilter;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -18,6 +20,8 @@ import java.util.Map;
 // Handle application and Spring MVC errors with consistent API responses
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ProblemDetail handleNotFound(ResourceNotFoundException ex,
@@ -96,12 +100,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ProblemDetail handleUnexpected(Exception ex,
                                           HttpServletRequest request)
     {
+        LOGGER.error("Unexpected API error", ex);
+
         return toProblem(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "INTERNAL_ERROR",
                 "Unexpected server error",
                 request);
-
     }
 
     // Build a consistent API error response

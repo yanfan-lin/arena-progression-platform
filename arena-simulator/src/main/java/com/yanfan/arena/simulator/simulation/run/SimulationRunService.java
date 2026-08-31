@@ -4,6 +4,8 @@ import com.yanfan.arena.contract.ArenaMatchCompleted;
 import com.yanfan.arena.contract.MatchMode;
 import com.yanfan.arena.simulator.simulation.match.InsufficientTeamsException;
 import com.yanfan.arena.simulator.simulation.match.MatchSimulationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.TaskScheduler;
@@ -17,6 +19,8 @@ import java.util.concurrent.ScheduledFuture;
 // Manage scheduled match generation.
 @Service
 public class SimulationRunService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SimulationRunService.class);
 
     private final MatchSimulationService matchSimulationService;
 
@@ -61,7 +65,15 @@ public class SimulationRunService {
                 Duration.ofMillis(request.intervalMs())
         );
 
-        return run.toResponse();
+        SimulationRunResponse response = run.toResponse();
+
+        LOGGER.info(
+                "Started simulation run runId={} mode={} maxMatches={}",
+                response.runId(),
+                response.mode(),
+                response.maxMatches());
+
+        return response;
     }
 
     public synchronized SimulationRunResponse getCurrentRun() {
@@ -77,7 +89,14 @@ public class SimulationRunService {
 
         run.requestStop();
 
-        return run.toResponse();
+        SimulationRunResponse response = run.toResponse();
+
+        LOGGER.info(
+                "Requested simulation run stop runId={}",
+                response.runId()
+        );
+
+        return response;
     }
 
     // Generate and publish one match for the scheduled run
@@ -90,6 +109,8 @@ public class SimulationRunService {
 
             if (run.isStopRequested()) {
                 run.stop(clock.instant());
+
+                logFinishedRun(run);
             }
 
             return;
@@ -105,11 +126,15 @@ public class SimulationRunService {
                 cancelScheduledTask(run);
 
                 run.stop(clock.instant());
+
+                logFinishedRun(run);
             }
             else if (run.hasReachedMatchLimit()) {
                 cancelScheduledTask(run);
 
                 run.complete(clock.instant());
+
+                logFinishedRun(run);
             }
         }
         catch (InsufficientTeamsException e) {
@@ -117,11 +142,16 @@ public class SimulationRunService {
             // enough eligible arena teams are available
             run.markWaitingForTeams();
         }
-        catch (RuntimeException e) {
+        catch (RuntimeException ex) {
             // Do not repeat the run after an unexpected failure
             cancelScheduledTask(run);
 
-            run.fail(e.getMessage(), clock.instant());
+            run.fail(ex.getMessage(), clock.instant());
+
+            LOGGER.error(
+                    "Simulation run failed runId={}",
+                    run.toResponse().runId(),
+                    ex);
         }
     }
 
@@ -145,6 +175,17 @@ public class SimulationRunService {
         }
 
         return currentRun;
+    }
+
+    private void logFinishedRun(SimulationRun run) {
+
+        SimulationRunResponse response = run.toResponse();
+
+        LOGGER.info(
+                "Finished simulation run runId={} state={} publishedMatches={}",
+                response.runId(),
+                response.state(),
+                response.publishedMatches());
     }
 
 }
