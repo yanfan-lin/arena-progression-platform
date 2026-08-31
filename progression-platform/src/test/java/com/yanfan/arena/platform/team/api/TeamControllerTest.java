@@ -70,6 +70,8 @@ class TeamControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"   \",\"mode\":\"THREE_VS_THREE\"}"))
                 .andExpect(status().isBadRequest())
+                .andExpect(header().exists("X-Request-ID"))
+                .andExpect(jsonPath("$.requestId").isNotEmpty())
                 .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
     }
 

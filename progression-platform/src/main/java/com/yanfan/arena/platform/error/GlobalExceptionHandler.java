@@ -1,5 +1,6 @@
 package com.yanfan.arena.platform.error;
 
+import com.yanfan.arena.platform.config.RequestIdFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.*;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -14,7 +15,7 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-// Provides consistent handling for application and Spring MVC errors
+// Handle application and Spring MVC errors with consistent API responses
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
@@ -57,7 +58,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             MethodArgumentNotValidException ex,
             HttpHeaders headers,
             HttpStatusCode status,
-            WebRequest request) {
+            WebRequest request)
+    {
         ProblemDetail problem = toProblem(
                 HttpStatus.BAD_REQUEST,
                 "VALIDATION_FAILED",
@@ -66,8 +68,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         Map<String, String> fieldErrors = new LinkedHashMap<>();
 
-        ex.getBindingResult().getFieldErrors().forEach(error ->
-                fieldErrors.put(error.getField(), error.getDefaultMessage()));
+        ex.getBindingResult().getFieldErrors()
+                .forEach(error ->
+                        fieldErrors.put(error.getField(), error.getDefaultMessage()));
 
         problem.setProperty("fieldErrors", fieldErrors);
 
@@ -80,7 +83,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             HttpMessageNotReadableException ex,
             HttpHeaders headers,
             HttpStatusCode status,
-            WebRequest request) {
+            WebRequest request)
+    {
         return ResponseEntity.badRequest().body(toProblem(
                 HttpStatus.BAD_REQUEST,
                 "MALFORMED_JSON",
@@ -90,7 +94,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleUnexpected(Exception ex,
-                                          HttpServletRequest request) {
+                                          HttpServletRequest request)
+    {
         return toProblem(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "INTERNAL_ERROR",
@@ -99,30 +104,36 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     }
 
+    // Build a consistent API error response
     private ProblemDetail toProblem(HttpStatus status,
                                     String code,
                                     String detail,
-                                    HttpServletRequest request) {
+                                    HttpServletRequest request)
+    {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
 
         problem.setTitle(status.getReasonPhrase());
 
         problem.setProperty("code", code);
         problem.setProperty("path", request.getRequestURI());
+        problem.setProperty("requestId",
+                request.getAttribute(RequestIdFilter.REQUEST_ID_ATTRIBUTE));
         problem.setProperty("timestamp", Instant.now().toString());
 
         return problem;
     }
 
+    // Convert Spring MVC requests before building the error
     private ProblemDetail toProblem(HttpStatus status,
                                     String code,
                                     String detail,
-                                    WebRequest request) {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
-        problem.setTitle(status.getReasonPhrase());
-        problem.setProperty("code", code);
-        problem.setProperty("path", ((ServletWebRequest) request).getRequest().getRequestURI());
-        problem.setProperty("timestamp", Instant.now().toString());
-        return problem;
+                                    WebRequest request)
+    {
+        return toProblem(
+                status,
+                code,
+                detail,
+                ((ServletWebRequest) request).getRequest());
     }
+
 }
