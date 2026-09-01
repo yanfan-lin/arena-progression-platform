@@ -1,15 +1,17 @@
 package com.yanfan.arena.simulator.simulation.match;
 
 import com.yanfan.arena.contract.ArenaMatchCompleted;
+import com.yanfan.arena.contract.KafkaTopics;
 import com.yanfan.arena.contract.MatchMode;
-import com.yanfan.arena.simulator.messaging.MatchEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,7 +25,7 @@ class MatchSimulationServiceTest {
     private MatchGenerator matchGenerator;
 
     @Mock
-    private MatchEventPublisher matchEventPublisher;
+    private KafkaTemplate<String, ArenaMatchCompleted> kafkaTemplate;
 
     @Mock
     private ArenaMatchCompleted event;
@@ -36,7 +38,7 @@ class MatchSimulationServiceTest {
     @BeforeEach
     void setUp() {
         matchSimulationService =
-                new MatchSimulationService(matchGenerator, matchEventPublisher);
+                new MatchSimulationService(matchGenerator, kafkaTemplate);
     }
 
     @Test
@@ -45,10 +47,18 @@ class MatchSimulationServiceTest {
         CompletableFuture<SendResult<String, ArenaMatchCompleted>>
                 ack = new CompletableFuture<>();
 
+        UUID matchId = UUID.randomUUID();
+
         when(matchGenerator.generateMatch(MatchMode.THREE_VS_THREE))
                 .thenReturn(event);
 
-        when(matchEventPublisher.publish(event))
+        when(event.matchId())
+                .thenReturn(matchId);
+
+        when(kafkaTemplate.send(
+                KafkaTopics.MATCH_COMPLETED,
+                matchId.toString(),
+                event))
                 .thenReturn(ack);
 
         // Run simulateMatch() separately because it waits for Kafka ACK
@@ -56,8 +66,11 @@ class MatchSimulationServiceTest {
                 CompletableFuture.supplyAsync(() -> matchSimulationService.simulateMatch(MatchMode.THREE_VS_THREE));
 
         // Wait until the match simulation reaches the publisher
-        verify(matchEventPublisher, timeout(1000))
-                .publish(event);
+        verify(kafkaTemplate, timeout(1000))
+                .send(
+                        KafkaTopics.MATCH_COMPLETED,
+                        matchId.toString(),
+                        event);
 
         // simulateMatch() should not be returned before Kafka acknowledges the event
         assertThat(simulation.isDone())

@@ -11,6 +11,7 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.junit.jupiter.Container;
@@ -44,7 +45,7 @@ class SimulatorKafkaPublicationIT {
     }
 
     @Autowired
-    MatchEventPublisher matchEventPublisher;
+    KafkaTemplate<String, ArenaMatchCompleted> kafkaTemplate;
 
     @Autowired
     ObjectMapper objectMapper;
@@ -72,7 +73,10 @@ class SimulatorKafkaPublicationIT {
             consumer.subscribe(List.of(KafkaTopics.MATCH_COMPLETED));
 
             // Wait for Kafka to acknowledge the published event
-            matchEventPublisher.publish(event)
+            kafkaTemplate.send(
+                            KafkaTopics.MATCH_COMPLETED,
+                            event.matchId().toString(),
+                            event)
                     .get(10, TimeUnit.SECONDS);
 
             // Read the published record
