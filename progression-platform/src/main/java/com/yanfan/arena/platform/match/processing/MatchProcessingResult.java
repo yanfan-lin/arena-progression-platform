@@ -24,8 +24,7 @@ public record MatchProcessingResult(
         return new MatchProcessingResult(MatchProcessingOutcome.DUPLICATE, null, reconciliation);
     }
 
-    // Immutable record of what the processor stored or changed
-    // for Redis to rebuild caches and leaderboards
+    // Hold calculated match changes for MySQL storage and Redis updates
     public record ProcessedMatch(
             String matchId,
             String eventId,

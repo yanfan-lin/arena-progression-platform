@@ -2,10 +2,11 @@ package com.yanfan.arena.platform.match.validation;
 
 import com.yanfan.arena.platform.error.ApiException;
 
-// Thrown when a consumed match event fails version or structural checks
+// Report a match event that fails validation or safe progression limits.
 public class MatchEventValidationException extends ApiException {
 
     public MatchEventValidationException(String message) {
+
         super("INVALID_MATCH_EVENT", message);
     }
 

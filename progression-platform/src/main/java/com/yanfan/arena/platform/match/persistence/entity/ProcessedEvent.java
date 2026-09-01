@@ -42,8 +42,4 @@ public class ProcessedEvent {
         return matchId;
     }
 
-    public Instant getProcessedAt() {
-        return processedAt;
-    }
-
 }

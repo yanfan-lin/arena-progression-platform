@@ -1,26 +1,21 @@
 package com.yanfan.arena.platform.match.processing;
 
 import com.yanfan.arena.contract.ArenaMatchCompleted;
-import com.yanfan.arena.platform.match.validation.MatchDomainValidator;
-import com.yanfan.arena.platform.match.validation.MatchEventValidationException;
-import com.yanfan.arena.platform.match.validation.MatchEventValidator;
-import com.yanfan.arena.platform.match.validation.MatchStatisticsValidator;
-import com.yanfan.arena.platform.match.persistence.entity.MatchParticipantResult;
-import com.yanfan.arena.platform.match.persistence.entity.MatchParticipantResultId;
-import com.yanfan.arena.platform.match.persistence.entity.MatchResult;
-import com.yanfan.arena.platform.match.persistence.entity.MatchTeamResult;
-import com.yanfan.arena.platform.match.persistence.entity.MatchTeamResultId;
-import com.yanfan.arena.platform.match.persistence.entity.ProcessedEvent;
+import com.yanfan.arena.platform.leaderboard.redis.TeamLeaderboardChangedEvent;
+import com.yanfan.arena.platform.match.persistence.entity.*;
 import com.yanfan.arena.platform.match.persistence.repository.MatchParticipantResultRepository;
 import com.yanfan.arena.platform.match.persistence.repository.MatchResultRepository;
 import com.yanfan.arena.platform.match.persistence.repository.MatchTeamResultRepository;
 import com.yanfan.arena.platform.match.persistence.repository.ProcessedEventRepository;
+import com.yanfan.arena.platform.match.validation.MatchDomainValidator;
+import com.yanfan.arena.platform.match.validation.MatchEventValidationException;
+import com.yanfan.arena.platform.match.validation.MatchEventValidator;
+import com.yanfan.arena.platform.match.validation.MatchStatisticsValidator;
 import com.yanfan.arena.platform.player.cache.PlayerProfileChangedEvent;
 import com.yanfan.arena.platform.player.domain.Player;
 import com.yanfan.arena.platform.player.persistence.PlayerRepository;
 import com.yanfan.arena.platform.team.domain.Team;
 import com.yanfan.arena.platform.team.persistence.TeamRepository;
-import com.yanfan.arena.platform.leaderboard.redis.TeamLeaderboardChangedEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -171,7 +166,7 @@ public class MatchProcessor {
         playerIds.sort(null);
         List<Player> lockedPlayers = playerRepository.findAllByIdForUpdate(playerIds);
 
-        // Map player IDs to locked player IDs for the calculator
+        // Map player IDs to their locked entities for the calculator
         Map<Long, Player> playersById = new HashMap<>();
         for (Player player : lockedPlayers) {
             playersById.put(player.getPlayerId(), player);
@@ -202,7 +197,7 @@ public class MatchProcessor {
 
         // Step 8
         // Store the idempotency record and all the immutable snapshots
-        persistMatch(eventId, matchId, processed);
+        persistMatch(processed);
 
         // Step 9
         // Update player's XP and level after the match
@@ -267,6 +262,7 @@ public class MatchProcessor {
     // Build the duplicate outcome from the committed idempotency record.
     // The stored event/match IDs win over the incoming ones.
     private MatchProcessingResult duplicateResult(ProcessedEvent committed) {
+
         String committedMatchId = committed.getMatchId();
 
         MatchProcessingResult.ReconciliationData reconciliation =
@@ -293,30 +289,29 @@ public class MatchProcessor {
         return MatchProcessingResult.duplicate(reconciliation);
     }
 
-    // Store the idempotency record and all the immutable snapshots
-    // Protected so that tests can inject a failure after the inserts
-    protected void persistMatch(String eventId,
-                                String matchId,
-                                MatchProcessingResult.ProcessedMatch processed)
-    {
-        processedEventRepository.save(new ProcessedEvent(eventId, matchId));
+    // Store the idempotency record and immutable match snapshots
+    private void persistMatch(MatchProcessingResult.ProcessedMatch processed) {
+
+        processedEventRepository.save(new ProcessedEvent(
+                processed.eventId(),
+                processed.matchId()));
 
         matchTeamResultRepository.saveAll(toTeamResultEntities(processed));
 
         matchParticipantResultRepository.saveAll(toParticipantResultEntities(processed));
 
         matchResultRepository.save(new MatchResult(
-                matchId,
+                processed.matchId(),
                 processed.mode(),
                 processed.winningTeamId(),
                 processed.contractVersion(),
                 processed.completedAt())
         );
-
     }
 
     // Convert computed team results into entity rows for the snapshot table
     private List<MatchTeamResult> toTeamResultEntities(MatchProcessingResult.ProcessedMatch processed) {
+
         List<MatchTeamResult> entities = new ArrayList<>();
 
         for (MatchProcessingResult.TeamResult teamResult : processed.teamResults()) {
@@ -335,6 +330,7 @@ public class MatchProcessor {
 
     // Convert calculated player results into entity rows for the snapshot table
     private List<MatchParticipantResult> toParticipantResultEntities(MatchProcessingResult.ProcessedMatch processed) {
+
         List<MatchParticipantResult> entities = new ArrayList<>();
 
         for (MatchProcessingResult.PlayerResult playerResult : processed.playerResults()) {
@@ -346,8 +342,7 @@ public class MatchProcessor {
                             playerResult.deaths(),
                             playerResult.assists(),
                             // XP values are small (100/150), so the cast is safe
-                            (int) playerResult.xpEarned()
-                    )
+                            (int) playerResult.xpEarned())
             );
         }
 

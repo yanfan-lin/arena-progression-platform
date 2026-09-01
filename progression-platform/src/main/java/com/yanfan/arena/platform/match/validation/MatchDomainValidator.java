@@ -1,7 +1,6 @@
 package com.yanfan.arena.platform.match.validation;
 
 import com.yanfan.arena.contract.ArenaMatchCompleted;
-import com.yanfan.arena.contract.MatchMode;
 import com.yanfan.arena.platform.team.domain.ArenaMode;
 import com.yanfan.arena.platform.team.domain.Team;
 import com.yanfan.arena.platform.team.domain.TeamMember;
@@ -20,8 +19,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-// Validate a match event against the current teams and locked rosters.
-// Run after the validation, and before any match is processed.
+// Validate a structurally valid match against current teams and locked rosters.
 @Component
 public class MatchDomainValidator {
 
@@ -49,6 +47,7 @@ public class MatchDomainValidator {
     // 6. the winner is one of the two teams,
     // 7. the submitted team rosters match the locked ones exactly.
     public void validate(ArenaMatchCompleted event) {
+
         long teamAId = event.teams().get(0).teamId();
         long teamBId = event.teams().get(1).teamId();
 
@@ -57,23 +56,30 @@ public class MatchDomainValidator {
         }
 
         List<Team> teams = teamRepository.findAllById(List.of(teamAId, teamBId));
+
         if (teams.size() != 2) {
             throw new MatchEventValidationException("One or both teams do not exist");
         }
 
-        ArenaMode mode = toArenaMode(event.mode());
+        ArenaMode mode = ArenaMode.from(event.mode());
+
         for (Team team : teams) {
             if (team.getStatus() != TeamStatus.ACTIVE) {
-                throw new MatchEventValidationException("Team " + team.getTeamId() + " is not active");
+                throw new MatchEventValidationException(
+                        "Team " + team.getTeamId() + " is not active");
             }
+
             if (team.getMode() != mode) {
-                throw new MatchEventValidationException("Team " + team.getTeamId() + " is not in the match mode");
+                throw new MatchEventValidationException(
+                        "Team " + team.getTeamId() + " is not in the match mode");
             }
         }
 
         Instant completedAt = event.completedAt();
+
         if (completedAt.isAfter(clock.instant().plus(MAX_COMPLETED_AT_FUTURE_SKEW))) {
-            throw new MatchEventValidationException("Match completedAt is too far in the future");
+            throw new MatchEventValidationException(
+                    "Match completedAt is too far in the future");
         }
 
         for (Team team : teams) {
@@ -103,33 +109,29 @@ public class MatchDomainValidator {
 
         if (!rosterA.equals(new HashSet<>(participantsAList))
                 || !rosterB.equals(new HashSet<>(participantsBList))) {
-            throw new MatchEventValidationException("Submitted participants do not match the locked rosters");
+            throw new MatchEventValidationException(
+                    "Submitted participants do not match the locked rosters");
         }
 
     }
 
     private Set<Long> rosterIds(long teamId) {
+
         return teamMemberRepository.findByTeamId(teamId).stream()
                 .map(TeamMember::getPlayerId)
                 .collect(Collectors.toSet());
     }
 
     private List<Long> participantIds(ArenaMatchCompleted.Team team) {
+
         return team.participants().stream()
                 .map(ArenaMatchCompleted.Player::playerId)
                 .toList();
     }
 
     private boolean hasDuplicates(List<Long> ids) {
+
         return ids.stream().distinct().count() != ids.size();
-    }
-
-    private ArenaMode toArenaMode(MatchMode mode) {
-        return switch (mode) {
-            case THREE_VS_THREE -> ArenaMode.THREE_VS_THREE;
-            case FIVE_VS_FIVE -> ArenaMode.FIVE_VS_FIVE;
-        };
-
     }
 
 }
