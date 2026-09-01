@@ -53,11 +53,8 @@ services:
     image: redis:7.4.10
     container_name: arena-redis
     restart: unless-stopped
-    command: [ "redis-server", "--appendonly", "yes" ]
     ports:
       - "127.0.0.1:6379:6379"
-    volumes:
-      - redis_data:/data
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
@@ -96,4 +93,3 @@ services:
 volumes:
   mysql_data:
   kafka_data:
-  redis_data:
