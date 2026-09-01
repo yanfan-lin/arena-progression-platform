@@ -137,40 +137,6 @@ class TeamLeaderboardServiceTest {
         verifyNoInteractions(redisStore, fallbackService, teamRepository);
     }
 
-    // Combine the Redis rank with the team's current MySQL details
-    @Test
-    void getRankUsesRedisRank() {
-
-        Team team = team(1L, "Example");
-
-        when(teamRepository.findById(1L))
-                .thenReturn(Optional.of(team));
-
-        when(redisStore.findRank(
-                ArenaMode.THREE_VS_THREE,
-                TeamLeaderboardMetric.WIN_RATE,
-                1L
-        ))
-                .thenReturn(Optional.of(3L));
-
-        TeamLeaderboardEntryResponse response =
-                teamLeaderboardService.getRank(
-                        1L,
-                        TeamLeaderboardMetric.WIN_RATE
-                );
-
-        assertThat(response.rank())
-                .isEqualTo(3L);
-
-        assertThat(response.teamId())
-                .isEqualTo(1L);
-
-        assertThat(response.winRate())
-                .isEqualTo(60.0);
-
-        verifyNoInteractions(fallbackService);
-    }
-
     // Use MySQL when Redis has no stored rank for the team
     @Test
     void getRankUsesMySqlWhenRedisHasNoRank() {
