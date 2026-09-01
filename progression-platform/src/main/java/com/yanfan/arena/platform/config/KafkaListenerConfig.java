@@ -2,7 +2,6 @@ package com.yanfan.arena.platform.config;
 
 import com.yanfan.arena.platform.error.ApiException;
 import com.yanfan.arena.platform.match.error.MatchProcessingErrorClassifier;
-import com.yanfan.arena.platform.match.error.MatchProcessingErrorType;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.Headers;
@@ -17,7 +16,6 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.support.ExponentialBackOffWithMaxRetries;
 import org.springframework.kafka.support.KafkaHeaders;
-import org.springframework.kafka.support.serializer.DeserializationException;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -31,7 +29,8 @@ public class KafkaListenerConfig {
             ConcurrentKafkaListenerContainerFactoryConfigurer configurer,
             ConsumerFactory<Object, Object> consumerFactory,
             KafkaTemplate<String, Object> dltKafkaTemplate,
-            MatchProcessingErrorClassifier errorClassifier) {
+            MatchProcessingErrorClassifier errorClassifier)
+    {
 
         ConcurrentKafkaListenerContainerFactory<Object, Object> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
@@ -41,32 +40,34 @@ public class KafkaListenerConfig {
         // Track the delivery attempt so the DLT can report it
         factory.getContainerProperties().setDeliveryAttemptHeader(true);
 
-        DeadLetterPublishingRecoverer dltRecoverer = new DeadLetterPublishingRecoverer(dltKafkaTemplate);
+        DeadLetterPublishingRecoverer dltRecoverer =
+                new DeadLetterPublishingRecoverer(dltKafkaTemplate);
 
         // Advance the offset only after the DLT write succeeds
         dltRecoverer.setFailIfSendResultIsError(true);
 
         // Add diagnostic headers for dead-letter records
         dltRecoverer.addHeadersFunction((record, exception) -> {
+
             Headers headers = new RecordHeaders();
 
             headers.add(new RecordHeader(
                     "failure-category",
-                    failureCategory(errorClassifier, exception)
-                            .getBytes(StandardCharsets.UTF_8)
-            ));
+                    errorClassifier.classify(exception).name()
+                            .getBytes(StandardCharsets.UTF_8))
+            );
 
             headers.add(new RecordHeader(
                     "failed-at",
                     String.valueOf(System.currentTimeMillis())
-                            .getBytes(StandardCharsets.UTF_8)
-            ));
+                            .getBytes(StandardCharsets.UTF_8))
+            );
 
             headers.add(new RecordHeader(
                     "attempt",
                     String.valueOf(attemptCount(record))
-                            .getBytes(StandardCharsets.UTF_8)
-            ));
+                            .getBytes(StandardCharsets.UTF_8))
+            );
 
             return headers;
         });
@@ -92,31 +93,6 @@ public class KafkaListenerConfig {
         return factory;
     }
 
-    // Label the reason why the record reached the DLT
-    private String failureCategory(MatchProcessingErrorClassifier classifier, Throwable ex) {
-        if (containsDeserializationException(ex)) {
-            return "DESERIALIZATION";
-        }
-        if (classifier.classify(ex) == MatchProcessingErrorType.PERMANENT) {
-            return "PERMANENT";
-        }
-
-        return "RETRYABLE";
-    }
-
-    // Check if the failure is a deserialization failure
-    private boolean containsDeserializationException(Throwable throwable) {
-        while (throwable != null) {
-            if (throwable instanceof DeserializationException) {
-                return true;
-            }
-
-            throwable = throwable.getCause();
-        }
-
-        return false;
-    }
-
     // Read the delivery-attempt header, or default to one when absent
     private int attemptCount(ConsumerRecord<?, ?> record) {
         Header header = record.headers().lastHeader(KafkaHeaders.DELIVERY_ATTEMPT);
@@ -126,6 +102,5 @@ public class KafkaListenerConfig {
 
         return ByteBuffer.wrap(header.value()).getInt();
     }
-
 
 }

@@ -23,10 +23,10 @@ public class KafkaDltConfig {
     KafkaTemplate<String, Object> dltKafkaTemplate(KafkaProperties properties) {
         Map<String, Object> producerProps = properties.buildProducerProperties();
 
-        // Set ack to all
+        // Wait for all replicas to confirm each DLT write
         producerProps.put(ProducerConfig.ACKS_CONFIG, "all");
 
-        // Make producer retries idempotent
+        // Prevent duplicate DLT records when Kafka retries a send
         producerProps.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
 
         // byte[] keeps malformed JSON raw,
@@ -44,6 +44,7 @@ public class KafkaDltConfig {
     // Standard Kafka producer used to send ordinary messages to Kafka.
     @Bean
     KafkaTemplate<String, String> kafkaTemplate(KafkaProperties properties) {
+
         return new KafkaTemplate<>(new DefaultKafkaProducerFactory<>(
                 properties.buildProducerProperties(),
                 new StringSerializer(),

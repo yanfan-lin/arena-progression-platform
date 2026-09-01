@@ -26,7 +26,7 @@ public class MatchEventListener {
         this.matchProcessor = matchProcessor;
     }
 
-    @KafkaListener(topics = KafkaTopics.MATCH_COMPLETED, groupId = "${spring.kafka.consumer.group-id}")
+    @KafkaListener(topics = KafkaTopics.MATCH_COMPLETED)
     public void onMatchEvent(ConsumerRecord<String, ArenaMatchCompleted> record) {
 
         // Add record details to logs for this delivery
@@ -50,7 +50,7 @@ public class MatchEventListener {
             // Reject a missing match ID before comparing it to the Kafka key
             if (event.matchId() == null) {
                 throw new MatchEventValidationException(
-                        "Match event ID is missing");
+                        "Match ID is missing");
             }
 
             // Reject a record whose key does not match the match ID
