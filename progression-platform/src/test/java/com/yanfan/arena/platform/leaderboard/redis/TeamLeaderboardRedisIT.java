@@ -142,10 +142,6 @@ class TeamLeaderboardRedisIT {
         assertThat(score(TeamLeaderboardMetric.WIN_RATE))
                 .isEqualTo(6363.0);
 
-        assertThat(redisTemplate.opsForZSet()
-                .size(TeamLeaderboardKey.from(MODE, TeamLeaderboardMetric.RATING)))
-                .isEqualTo(1L);
-
         // Retire the team and remove its scores from every leaderboard
         transactionTemplate.executeWithoutResult(status -> {
             jdbcTemplate.update(

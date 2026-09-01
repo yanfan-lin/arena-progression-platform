@@ -107,7 +107,7 @@ public class PlayerService {
 
         if (teamMemberRepository.countActiveTeamMemberships(playerId) > 0) {
             throw new ConflictException("PLAYER_IN_ACTIVE_TEAM",
-                    "Player on an active team can not be retired");
+                    "Player on an active team cannot be retired");
         }
 
         player.retire(clock.instant());
