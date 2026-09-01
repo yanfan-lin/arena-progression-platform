@@ -9,6 +9,8 @@ import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
@@ -40,6 +42,7 @@ public class PlayerProfileCache {
 
     // Read the cached JSON, an absent key means a cache miss
     public Optional<PlayerResponse> find(Long playerId) {
+
         try {
             String json = redisTemplate.opsForValue().get(key(playerId));
 
@@ -63,14 +66,14 @@ public class PlayerProfileCache {
 
     // Store the player profile with the configured TTL
     public void put(PlayerResponse response) {
+
         try {
             String json = objectMapper.writeValueAsString(response);
 
             redisTemplate.opsForValue().set(
                     key(response.playerId()),
                     json,
-                    ttl
-            );
+                    ttl);
         }
         catch (DataAccessException | JacksonException exception) {
             log.warn(
@@ -95,14 +98,19 @@ public class PlayerProfileCache {
         }
     }
 
+    // Wait for MySQL to commit before removing the cached profile
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void removeChangedProfile(PlayerProfileChangedEvent event) {
+        evict(event.playerId());
+    }
+
     // Clear cached profiles so future reads reload current MySQL data
     public boolean clearAll() {
         try (Cursor<String> cursor = redisTemplate.scan(
                 ScanOptions.scanOptions()
                         .match(KEY_PREFIX + "*")
                         .build())
-            )
-        {
+        ) {
             while (cursor.hasNext()) {
                 redisTemplate.delete(cursor.next());
             }
