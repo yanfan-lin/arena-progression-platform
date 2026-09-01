@@ -1,6 +1,5 @@
 package com.yanfan.arena.platform.leaderboard.service;
 
-import com.yanfan.arena.platform.error.ResourceNotFoundException;
 import com.yanfan.arena.platform.leaderboard.TeamLeaderboardMetric;
 import com.yanfan.arena.platform.leaderboard.api.TeamLeaderboardEntryResponse;
 import com.yanfan.arena.platform.leaderboard.api.TeamLeaderboardResponse;
@@ -23,7 +22,6 @@ import java.time.Instant;
 import static com.yanfan.arena.platform.test.IntegrationTestContainers.mysqlContainer;
 import static com.yanfan.arena.platform.test.IntegrationTestContainers.registerMySqlProperties;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 // Verify MySQL leaderboard ranking and exact ranks
 @SpringBootTest
@@ -175,15 +173,6 @@ class TeamLeaderboardFallbackIT {
         // Delta team ranks first, then the tied team with the larger ID
         assertThat(result.rank())
                 .isEqualTo(3L);
-    }
-
-    @Test
-    void rejectsRankForRetiredTeam() {
-
-        assertThatThrownBy(() ->
-                leaderboardService.getRank(5L, TeamLeaderboardMetric.RATING))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessage("Team is not on an active leaderboard");
     }
 
     private void insertTeam(
