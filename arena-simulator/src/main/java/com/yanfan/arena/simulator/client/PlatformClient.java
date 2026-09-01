@@ -1,8 +1,7 @@
 package com.yanfan.arena.simulator.client;
 
 import com.yanfan.arena.contract.MatchMode;
-import com.yanfan.arena.simulator.config.PlatformClientProperties;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -15,14 +14,13 @@ public class PlatformClient {
 
     private final RestClient restClient;
 
-    @Autowired
     public PlatformClient(
             RestClient.Builder restClientBuilder,
-            PlatformClientProperties properties)
+            @Value("${arena.simulator.platform.base-url}") String baseUrl)
     {
         // Configure the platform address once so methods only need endpoint paths
         this.restClient = restClientBuilder
-                .baseUrl(properties.baseUrl().toString())
+                .baseUrl(baseUrl)
                 .build();
     }
 
