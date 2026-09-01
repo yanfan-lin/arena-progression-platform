@@ -11,10 +11,6 @@
     <name>progression-platform</name>
     <description>Event-driven arena progression backend</description>
 
-    <!-- Runtime starters: REST API (web), JPA/MySQL persistence, Kafka
-     messaging, and Redis caching. Test scope adds Spring Boot
-     test support and Testcontainers for real MySQL/Kafka/Redis in
-     integration tests. -->
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -71,13 +67,11 @@
             <artifactId>flyway-mysql</artifactId>
         </dependency>
 
-        <!-- Source: https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-validation -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
-        <!-- Arena contract dependency-->
         <dependency>
             <groupId>com.yanfan.arena</groupId>
             <artifactId>arena-contract</artifactId>
