@@ -57,10 +57,6 @@ public class MatchProcessor {
     // Volatile because the Kafka listener reads it from a different thread
     private volatile boolean failBeforeCommit;
 
-    // Test-only trigger for a retryable failure
-    // Volatile because the Kafka listener reads it from a different thread
-    private volatile boolean failRetryableForTest;
-
     @Autowired
     public MatchProcessor(
             MatchEventValidator eventValidator,
@@ -93,25 +89,10 @@ public class MatchProcessor {
         this.failBeforeCommit = true;
     }
 
-    // For test-only: make every process() call fail with a retryable error
-    void failRetryableForTest() {
-        this.failRetryableForTest = true;
-    }
-
-    // For test-only: stop the forced retryable failures
-    void clearRetryableFailureForTest() {
-        this.failRetryableForTest = false;
-    }
-
     // One transaction for the whole match
     // if anything fails, every change is rolled back
     @Transactional
     public MatchProcessingResult process(ArenaMatchCompleted event) {
-
-        // Test-only: keep failing until the test clears this flag
-        if (failRetryableForTest) {
-            throw new IllegalStateException("Forced retryable failure");
-        }
 
         // Consume the test-only failure flag so it never sticks for later calls
         boolean forcedFailure = failBeforeCommit;
