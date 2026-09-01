@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 
 import java.time.Instant;
 
-// Represents an arena team and its lifecycle state
+// Represent an arena team and its lifecycle state
 @Entity
 @Table(name = "teams")
 public class Team {
@@ -70,16 +70,14 @@ public class Team {
         updatedAt = Instant.now();
     }
 
-    // Move draft team to ACTIVE status, locks the roster,
-    // and initiate arena rating
+    // Activate a draft team, lock its roster, and initialize its arena rating
     public void activate(Instant activatedAt) {
         this.status = TeamStatus.ACTIVE;
         this.rating = 1000;
         this.activatedAt = activatedAt;
     }
 
-    // Move draft/active team to RETIRED and records when it happened,
-    // The roster and statistics stay untouched for history
+    // Retire a draft or active team while keeping its roster and statistics for history
     public void retire(Instant retiredAt) {
         this.status = TeamStatus.RETIRED;
         this.retiredAt = retiredAt;
@@ -177,16 +175,8 @@ public class Team {
         return createdAt;
     }
 
-    public void setCreatedAt(Instant createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public Instant getUpdatedAt() {
         return updatedAt;
-    }
-
-    public void setUpdatedAt(Instant updatedAt) {
-        this.updatedAt = updatedAt;
     }
 
     public Instant getActivatedAt() {
@@ -199,10 +189,6 @@ public class Team {
 
     public Instant getRetiredAt() {
         return retiredAt;
-    }
-
-    public void setRetiredAt(Instant retiredAt) {
-        this.retiredAt = retiredAt;
     }
 
 

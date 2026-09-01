@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 
 import java.time.Instant;
 
-// Represents a player account and its progression state
+// Represent a player account and its progression state
 @Entity
 @Table(name = "players")
 public class Player {
@@ -101,10 +101,5 @@ public class Player {
     public Instant getRetiredAt() {
         return retiredAt;
     }
-
-    public void setRetiredAt(Instant retiredAt) {
-        this.retiredAt = retiredAt;
-    }
-
 
 }

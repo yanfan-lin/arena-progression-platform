@@ -29,7 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-// Team lifecycle operations
+// Manage team lifecycle operations
 @Service
 public class TeamService {
 
@@ -44,7 +44,6 @@ public class TeamService {
     private final ApplicationEventPublisher eventPublisher;
 
     @Autowired
-    // Constructor injection
     public TeamService(TeamRepository teamRepository,
                        TeamMemberRepository teamMemberRepository,
                        PlayerRepository playerRepository,
@@ -58,11 +57,10 @@ public class TeamService {
         this.eventPublisher = eventPublisher;
     }
 
-
     @Transactional
     public TeamResponse create(CreateTeamRequest request) {
 
-        String name = request.getName().trim();
+        String name = request.getName();
 
         // If the same team name already exists in this mode, stop and return 409
         if (teamRepository.existsByModeAndNameIgnoreCase(request.getMode(), name)) {
@@ -78,12 +76,12 @@ public class TeamService {
             // Save the team now. If two requests use the same name at the same time,
             // the database rejects the second one
             return TeamResponse.from(teamRepository.saveAndFlush(team), List.of());
-        } catch (DataIntegrityViolationException ex) {
+        }
+        catch (DataIntegrityViolationException ex) {
             // The name was already saved by another request - return 409 just like above
             throw new ConflictException("TEAM_NAME_TAKEN",
                     "A team with this name already exists in this mode");
         }
-
     }
 
     @Transactional(readOnly = true)
@@ -146,6 +144,7 @@ public class TeamService {
 
     @Transactional
     public TeamResponse replaceRoster(Long teamId, ReplaceRosterRequest request) {
+
         Team team = teamRepository.findByIdForUpdate(teamId)
                 .orElseThrow(() -> new ResourceNotFoundException("TEAM_NOT_FOUND", "Team not found"));
 
@@ -154,11 +153,13 @@ public class TeamService {
         }
 
         List<Long> playerIds = request.getPlayerIds();
+
         if (playerIds.stream().distinct().count() != playerIds.size()) {
             throw new ConflictException("ROSTER_INVALID", "Roster contains duplicate players");
         }
 
         List<Player> players = playerRepository.findAllById(playerIds);
+
         if (players.size() != playerIds.size()) {
             throw new ResourceNotFoundException("PLAYER_NOT_FOUND", "One or more players do not exist");
         }
@@ -169,8 +170,8 @@ public class TeamService {
             }
         }
 
-        // Perform deleting the old roaster and inserting the new one in the same transaction,
-        // so an update failure leaves the previous roaster untouched
+        // Replace the roster in one transaction
+        // so a failure keeps the previous roster unchanged
         teamMemberRepository.deleteByTeamId(teamId);
 
         for (Long playerId : playerIds) {
@@ -188,6 +189,7 @@ public class TeamService {
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public TeamResponse activate(Long teamId) {
+
         Team team = teamRepository.findByIdForUpdate(teamId)
                 .orElseThrow(() -> new ResourceNotFoundException("TEAM_NOT_FOUND", "Team not found"));
 
@@ -196,6 +198,7 @@ public class TeamService {
         }
 
         List<TeamMember> members = teamMemberRepository.findByTeamId(teamId);
+
         int requiredSize = team.getMode() == ArenaMode.THREE_VS_THREE ? 3 : 5;
 
         if (members.size() != requiredSize) {
@@ -203,9 +206,9 @@ public class TeamService {
                     "A " + team.getMode() + " team needs exactly " + requiredSize + " players");
         }
 
-        List<Long> playerIds = members
-                .stream()
+        List<Long> playerIds = members.stream()
                 .map(TeamMember::getPlayerId)
+                .sorted()
                 .toList();
 
         // Lock players in ascending ID order so concurrent team activations never deadlock
@@ -226,11 +229,6 @@ public class TeamService {
                     "A player is already on an active team in this mode");
         }
 
-        List<Long> rosterPlayerIds = members.stream()
-                .map(TeamMember::getPlayerId)
-                .sorted()
-                .toList();
-
         team.activate(clock.instant());
 
         Team savedTeam = teamRepository.saveAndFlush(team);
@@ -242,12 +240,12 @@ public class TeamService {
                 )
         );
 
-        return TeamResponse.from(savedTeam, rosterPlayerIds);
-
+        return TeamResponse.from(savedTeam, playerIds);
     }
 
     @Transactional
     public TeamResponse retire(Long teamId) {
+
         // Lock the team row to separate a retirement request from a roster change
         Team team = teamRepository.findByIdForUpdate(teamId)
                 .orElseThrow(() -> new ResourceNotFoundException("TEAM_NOT_FOUND", "Team not found"));

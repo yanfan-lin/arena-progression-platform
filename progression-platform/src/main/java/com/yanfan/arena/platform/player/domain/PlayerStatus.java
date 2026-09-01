@@ -1,7 +1,9 @@
 package com.yanfan.arena.platform.player.domain;
 
-// Account status for players, Retirement is permanent
+// Represent whether a player is active or permanently retired.
 public enum PlayerStatus {
+
     ACTIVE,
     RETIRED
+
 }

@@ -33,10 +33,6 @@ public class TeamMember {
         return memberId;
     }
 
-    public void setMemberId(Long memberId) {
-        this.memberId = memberId;
-    }
-
     public Long getTeamId() {
         return teamId;
     }
@@ -55,10 +51,6 @@ public class TeamMember {
 
     public Instant getAddedAt() {
         return addedAt;
-    }
-
-    public void setAddedAt(Instant addedAt) {
-        this.addedAt = addedAt;
     }
 
 

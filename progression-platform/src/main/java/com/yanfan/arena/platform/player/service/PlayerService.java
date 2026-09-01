@@ -49,7 +49,7 @@ public class PlayerService {
 
     @Transactional
     public PlayerResponse create(CreatePlayerRequest request) {
-        String displayName = request.getDisplayName().trim();
+        String displayName = request.getDisplayName();
 
         // Check whether the name is already used
         if (playerRepository.existsByDisplayNameIgnoreCase(displayName)) {
