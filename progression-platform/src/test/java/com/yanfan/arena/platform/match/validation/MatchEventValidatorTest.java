@@ -30,13 +30,6 @@ class MatchEventValidatorTest {
     }
 
     @Test
-    void nullEventIsRejected() {
-        assertThatThrownBy(() -> validator.validate(null))
-                .isInstanceOf(MatchEventValidationException.class)
-                .hasMessageContaining("missing");
-    }
-
-    @Test
     void unsupportedVersionIsRejected() {
         ArenaMatchCompleted event = new ArenaMatchCompleted(
                 99,

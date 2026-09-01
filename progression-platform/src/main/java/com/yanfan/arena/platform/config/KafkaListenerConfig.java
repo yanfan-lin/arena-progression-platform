@@ -58,12 +58,6 @@ public class KafkaListenerConfig {
             );
 
             headers.add(new RecordHeader(
-                    "failed-at",
-                    String.valueOf(System.currentTimeMillis())
-                            .getBytes(StandardCharsets.UTF_8))
-            );
-
-            headers.add(new RecordHeader(
                     "attempt",
                     String.valueOf(attemptCount(record))
                             .getBytes(StandardCharsets.UTF_8))
