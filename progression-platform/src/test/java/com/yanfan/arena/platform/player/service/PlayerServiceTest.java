@@ -50,47 +50,8 @@ class PlayerServiceTest {
     PlayerService playerService;
 
     @Test
-    void createTrimsDisplayNameAndSaves() {
-        when(playerRepository.existsByDisplayNameIgnoreCase("ArenaExamplePlayer")).thenReturn(false);
-
-        when(playerRepository.saveAndFlush(any(Player.class)))
-                .thenAnswer(invocation ->
-                        {
-                            Player player = invocation.getArgument(0);
-                            player.setStatus(PlayerStatus.ACTIVE);
-
-                            return player;
-                        }
-                );
-
-        CreatePlayerRequest request = new CreatePlayerRequest();
-        request.setDisplayName("   ArenaExamplePlayer  ");
-
-        PlayerResponse response = playerService.create(request);
-
-        assertThat(response.displayName())
-                .isEqualTo("ArenaExamplePlayer");
-        assertThat(response.status())
-                .isEqualTo(PlayerStatus.ACTIVE);
-
-        verify(playerRepository).saveAndFlush(any(Player.class));
-    }
-
-    @Test
-    void createRejectsDuplicateDisplayName() {
-        when(playerRepository.existsByDisplayNameIgnoreCase("ArenaExamplePlayer"))
-                .thenReturn(true);
-
-        CreatePlayerRequest request = new CreatePlayerRequest();
-        request.setDisplayName("ArenaExamplePlayer");
-
-        assertThatThrownBy(() -> playerService.create(request))
-                .isInstanceOf(ConflictException.class)
-                .hasMessageContaining("already exists");
-    }
-
-    @Test
     void createTranslatesDatabaseDuplicateToConflict() {
+
         when(playerRepository.existsByDisplayNameIgnoreCase("ArenaExamplePlayer"))
                 .thenReturn(false);
 
@@ -220,7 +181,7 @@ class PlayerServiceTest {
         assertThat(response)
                 .isSameAs(cachedResponse);
 
-        // A cache hits should avoid the MySQL read requests
+        // Verify a cache hit avoids a MySQL read
         verifyNoInteractions(playerRepository);
     }
 

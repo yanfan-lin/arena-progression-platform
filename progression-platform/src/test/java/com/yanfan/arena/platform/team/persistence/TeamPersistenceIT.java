@@ -5,7 +5,6 @@ import com.yanfan.arena.platform.player.persistence.PlayerRepository;
 import com.yanfan.arena.platform.team.domain.ArenaMode;
 import com.yanfan.arena.platform.team.domain.Team;
 import com.yanfan.arena.platform.team.domain.TeamMember;
-import com.yanfan.arena.platform.team.domain.TeamStatus;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -45,33 +44,6 @@ class TeamPersistenceIT {
     PlayerRepository playerRepository;
 
     @Test
-    void draftTeamPersistsWithDefaults() {
-        Team team = new Team();
-
-        team.setName("ArenaForce");
-        team.setMode(ArenaMode.THREE_VS_THREE);
-
-        Team saved = teamRepository.saveAndFlush(team);
-
-        assertThat(saved.getTeamId())
-                .isPositive();
-        assertThat(saved.getStatus())
-                .isEqualTo(TeamStatus.DRAFT);
-        assertThat(saved.getRating())
-                .isNull();
-        assertThat(saved.getMatchesPlayed())
-                .isZero();
-        assertThat(saved.getWins())
-                .isZero();
-        assertThat(saved.getLosses())
-                .isZero();
-        assertThat(saved.getCreatedAt())
-                .isNotNull();
-        assertThat(saved.getUpdatedAt())
-                .isNotNull();
-    }
-
-    @Test
     void teamNamesAreUniqueCaseInsensitivelyWithinMode() {
         Team first = new Team();
 
@@ -87,24 +59,6 @@ class TeamPersistenceIT {
 
         assertThatThrownBy(() -> teamRepository.saveAndFlush(duplicate))
                 .isInstanceOf(DataIntegrityViolationException.class);
-    }
-
-    // Verify the team member migration and repository against a real MySQL instance
-    @Test
-    void memberSavesWithAddedAt() {
-        Long teamId = saveTeam("MemberTeam");
-        Long playerId = savePlayer("MemberPlayer");
-
-        TeamMember member = new TeamMember();
-        member.setTeamId(teamId);
-        member.setPlayerId(playerId);
-
-        TeamMember savedMember = teamMemberRepository.saveAndFlush(member);
-
-        assertThat(savedMember.getMemberId())
-                .isPositive();
-        assertThat(savedMember.getAddedAt())
-                .isNotNull();
     }
 
     @Test

@@ -6,7 +6,6 @@ import com.yanfan.arena.platform.player.persistence.PlayerRepository;
 import com.yanfan.arena.platform.team.domain.ArenaMode;
 import com.yanfan.arena.platform.team.domain.Team;
 import com.yanfan.arena.platform.team.domain.TeamMember;
-import com.yanfan.arena.platform.team.domain.TeamStatus;
 import com.yanfan.arena.platform.team.service.TeamService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,9 +13,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.mysql.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.mysql.MySQLContainer;
 
 import java.util.concurrent.*;
 
@@ -24,8 +23,7 @@ import static com.yanfan.arena.platform.test.IntegrationTestContainers.mysqlCont
 import static com.yanfan.arena.platform.test.IntegrationTestContainers.registerMySqlProperties;
 import static org.assertj.core.api.Assertions.assertThat;
 
-// Verify that the concurrent activation guarantee:
-// Two teams activating the same player at the same time and ONLY one succeeds
+// Verify concurrent team activations cannot share the same player.
 @SpringBootTest
 @Testcontainers
 class ConcurrentActivationIT {
@@ -55,6 +53,7 @@ class ConcurrentActivationIT {
 
     @Test
     void concurrentActivationsOfSamePlayerAllowOnlyOneWinner() throws Exception {
+
         Long sharedId = savePlayer("SharedPlayer");
 
         Long teamAPlayer1 = savePlayer("TeamAPlayer1");
@@ -81,7 +80,8 @@ class ConcurrentActivationIT {
 
             teamAError = teamAResult.get(30, TimeUnit.SECONDS);
             teamBError = teamBResult.get(30, TimeUnit.SECONDS);
-        } finally {
+        }
+        finally {
             executor.shutdownNow();
         }
 
@@ -103,7 +103,9 @@ class ConcurrentActivationIT {
     }
 
     private Throwable activate(Long teamId, CountDownLatch ready, CountDownLatch start) {
+
         ready.countDown();
+
         try {
             start.await();
             teamService.activate(teamId);
@@ -115,6 +117,7 @@ class ConcurrentActivationIT {
     }
 
     private Long savePlayer(String displayName) {
+
         Player player = new Player();
         player.setDisplayName(displayName);
 
@@ -122,6 +125,7 @@ class ConcurrentActivationIT {
     }
 
     private Long createDraftTeam(String name, Long... playerIds) {
+
         Team team = new Team();
 
         team.setName(name);
@@ -130,6 +134,7 @@ class ConcurrentActivationIT {
         Long teamId = teamRepository.saveAndFlush(team).getTeamId();
 
         for (Long playerId : playerIds) {
+
             TeamMember member = new TeamMember();
 
             member.setTeamId(teamId);
@@ -140,6 +145,5 @@ class ConcurrentActivationIT {
 
         return teamId;
     }
-
 
 }

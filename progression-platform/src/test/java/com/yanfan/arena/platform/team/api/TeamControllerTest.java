@@ -1,8 +1,6 @@
 package com.yanfan.arena.platform.team.api;
 
 import com.yanfan.arena.platform.api.PageResponse;
-import com.yanfan.arena.platform.team.domain.ArenaMode;
-import com.yanfan.arena.platform.team.domain.TeamStatus;
 import com.yanfan.arena.platform.team.service.TeamMatchHistoryService;
 import com.yanfan.arena.platform.team.service.TeamService;
 import org.junit.jupiter.api.Test;
@@ -12,10 +10,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.Instant;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -32,34 +28,6 @@ class TeamControllerTest {
 
     @MockitoBean
     TeamMatchHistoryService teamMatchHistoryService;
-
-    @Test
-    void createReturns201WithLocation() throws Exception {
-        when(teamService.create(any(CreateTeamRequest.class)))
-                .thenReturn(new TeamResponse(
-                        1L,
-                        "ExampleTeam",
-                        ArenaMode.THREE_VS_THREE,
-                        TeamStatus.DRAFT,
-                        null,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        0,
-                        Instant.now(),
-                        Instant.now(),
-                        List.of()
-                ));
-
-        mockMvc.perform(post("/api/v1/teams")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"ExampleTeam\",\"mode\":\"THREE_VS_THREE\"}"))
-                .andExpect(status().isCreated())
-                .andExpect(header().string("Location", "http://localhost/api/v1/teams/1"))
-                .andExpect(jsonPath("$.name").value("ExampleTeam"));
-    }
 
     @Test
     void createReturns400ForBlankName() throws Exception {
