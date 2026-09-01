@@ -3,9 +3,9 @@ package com.yanfan.arena.platform.progression;
 // Player's XP and level rules
 public class XpPolicy {
 
-    public static final long COMPLETION_XP = 100;
-    public static final long WIN_BONUS_XP = 50;
-    public static final long XP_PER_LEVEL = 1000;
+    private static final long COMPLETION_XP = 100;
+    private static final long WIN_BONUS_XP = 50;
+    private static final long XP_PER_LEVEL = 1000;
 
     private XpPolicy() {
 

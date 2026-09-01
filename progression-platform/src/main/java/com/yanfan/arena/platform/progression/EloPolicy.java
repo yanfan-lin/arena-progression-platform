@@ -9,13 +9,13 @@ public final class EloPolicy {
 
     // K controls how many points move after one match.
     // Bigger K means ratings change faster.
-    public static final int K_FACTOR = 32;
+    private static final int K_FACTOR = 32;
 
     // A 400-point rating difference gives the stronger team about a 91% expected score
-    public static final int SCALE = 400;
+    private static final int SCALE = 400;
 
     // Limit the rating difference used by the Elo calculation to 400 points
-    public static final int MAX_RATING_DIFFERENCE = 400;
+    private static final int MAX_RATING_DIFFERENCE = 400;
 
     // The result of one match:
     // the winner team gains points and the loser loses exactly the same number,

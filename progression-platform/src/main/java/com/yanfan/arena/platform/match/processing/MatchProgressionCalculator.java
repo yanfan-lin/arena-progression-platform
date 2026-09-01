@@ -1,7 +1,6 @@
 package com.yanfan.arena.platform.match.processing;
 
 import com.yanfan.arena.contract.ArenaMatchCompleted;
-import com.yanfan.arena.platform.match.validation.MatchEventValidationException;
 import com.yanfan.arena.platform.player.domain.Player;
 import com.yanfan.arena.platform.progression.EloPolicy;
 import com.yanfan.arena.platform.progression.XpPolicy;
@@ -28,16 +27,9 @@ public class MatchProgressionCalculator {
         boolean teamAWon = teamA.getTeamId() == event.winnerTeamId();
 
         // Calculate new rating for both teams after the match
-        EloPolicy.RatingChange ratingChange;
-
-        try {
-            ratingChange = EloPolicy.calculate(
-                    teamAWon ? teamA.getRating() : teamB.getRating(),
-                    teamAWon ? teamB.getRating() : teamA.getRating());
-        }
-        catch (ArithmeticException e) {
-            throw new MatchEventValidationException("Elo rating would overflow");
-        }
+        EloPolicy.RatingChange ratingChange = EloPolicy.calculate(
+                teamAWon ? teamA.getRating() : teamB.getRating(),
+                teamAWon ? teamB.getRating() : teamA.getRating());
 
         // Build the team results for both teams
         List<MatchProcessingResult.TeamResult> teamResults = List.of(
@@ -67,9 +59,7 @@ public class MatchProgressionCalculator {
                 // Load the player by ID
                 Player player = playersById.get(participant.playerId());
 
-                long totalXpAfter = addXp(player.getTotalXp(), xpEarned);
-
-                ensureLevelFits(totalXpAfter);
+                long totalXpAfter = player.getTotalXp() + xpEarned;
 
                 // Keep player's stats as a snapshot for history
                 playerResults.add(new MatchProcessingResult.PlayerResult(
@@ -120,12 +110,12 @@ public class MatchProgressionCalculator {
         }
 
         // Compute the updated stats after the match
-        int matchesPlayedAfter = addStat(team.getMatchesPlayed(), 1);
-        int winsAfter = addStat(team.getWins(), won ? 1 : 0);
-        int lossesAfter = addStat(team.getLosses(), won ? 0 : 1);
-        int totalKillsAfter = addStat(team.getTotalKills(), kills);
-        int totalDeathsAfter = addStat(team.getTotalDeaths(), deaths);
-        int totalAssistsAfter = addStat(team.getTotalAssists(), assists);
+        int matchesPlayedAfter = team.getMatchesPlayed() + 1;
+        int winsAfter = team.getWins() + (won ? 1 : 0);
+        int lossesAfter = team.getLosses() + (won ? 0 : 1);
+        int totalKillsAfter = team.getTotalKills() + kills;
+        int totalDeathsAfter = team.getTotalDeaths() + deaths;
+        int totalAssistsAfter = team.getTotalAssists() + assists;
 
         // Return the updated team results
         return new MatchProcessingResult.TeamResult(
@@ -141,34 +131,6 @@ public class MatchProgressionCalculator {
                 totalDeathsAfter,
                 totalAssistsAfter
         );
-    }
-
-    // Reject XP that would overflow the cumulative long total
-    private long addXp(long currentXp, long xpEarned) {
-
-        if (currentXp > Long.MAX_VALUE - xpEarned) {
-            throw new MatchEventValidationException("Player XP would overflow");
-        }
-
-        return currentXp + xpEarned;
-    }
-
-    // Reject team statistics that would overflow the cumulative int total
-    private int addStat(int currentValue, int addedValue) {
-
-        if (currentValue > Integer.MAX_VALUE - addedValue) {
-            throw new MatchEventValidationException("Team statistic would overflow");
-        }
-
-        return currentValue + addedValue;
-    }
-
-    // Level is stored as INT, so reject XP that would push it past Integer.MAX_VALUE
-    private void ensureLevelFits(long totalXp) {
-
-        if (totalXp / XpPolicy.XP_PER_LEVEL > Integer.MAX_VALUE - 1L) {
-            throw new MatchEventValidationException("Player level would overflow");
-        }
     }
 
 }
