@@ -16,7 +16,6 @@ import com.yanfan.arena.platform.player.domain.Player;
 import com.yanfan.arena.platform.player.persistence.PlayerRepository;
 import com.yanfan.arena.platform.team.domain.Team;
 import com.yanfan.arena.platform.team.persistence.TeamRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,7 +56,6 @@ public class MatchProcessor {
     // Volatile because the Kafka listener reads it from a different thread
     private volatile boolean failBeforeCommit;
 
-    @Autowired
     public MatchProcessor(
             MatchEventValidator eventValidator,
             MatchDomainValidator domainValidator,
@@ -231,31 +229,25 @@ public class MatchProcessor {
                 )
         );
 
-        // Step 11
-        // Return the summary of changes for later Redis updates
         return new MatchProcessingResult(
-                MatchProcessingResult.MatchProcessingOutcome.PROCESSED,
-                processed,
-                null);
+                MatchProcessingResult.MatchProcessingOutcome.PROCESSED);
 
     }
 
-    // Build the duplicate outcome from the committed idempotency record.
-    // The stored event/match IDs win over the incoming ones.
+    // Refresh Redis data from the match that was already committed
     private MatchProcessingResult duplicateResult(ProcessedEvent committed) {
 
         String committedMatchId = committed.getMatchId();
 
-        MatchProcessingResult.ReconciliationData reconciliation =
-                new MatchProcessingResult.ReconciliationData(
-                        committed.getEventId(),
-                        committedMatchId,
-                        matchTeamResultRepository.findTeamIdsByMatchId(committedMatchId),
-                        matchParticipantResultRepository.findPlayerIdsByMatchId(committedMatchId));
+        List<Long> teamIds =
+                matchTeamResultRepository.findTeamIdsByMatchId(committedMatchId);
+
+        List<Long> playerIds =
+                matchParticipantResultRepository.findPlayerIdsByMatchId(committedMatchId);
 
         // Repeat cache cleanup if the first delivery stopped after saving the match
         // Player XP and team stats are not updated again
-        for (Long playerId : reconciliation.playerIds()) {
+        for (Long playerId : playerIds) {
             eventPublisher.publishEvent(
                     new PlayerProfileChangedEvent(playerId)
             );
@@ -264,10 +256,11 @@ public class MatchProcessor {
         // The first delivery may have committed MySQL but stopped before updating Redis,
         // refreshing the complete scores again will not count the match twice
         eventPublisher.publishEvent(
-                new TeamLeaderboardChangedEvent(reconciliation.teamIds())
+                new TeamLeaderboardChangedEvent(teamIds)
         );
 
-        return MatchProcessingResult.duplicate(reconciliation);
+        return new MatchProcessingResult(
+                MatchProcessingResult.MatchProcessingOutcome.DUPLICATE);
     }
 
     // Store the idempotency record and immutable match snapshots

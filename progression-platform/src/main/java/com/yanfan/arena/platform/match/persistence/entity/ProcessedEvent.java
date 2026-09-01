@@ -34,10 +34,6 @@ public class ProcessedEvent {
         this.processedAt = Instant.now();
     }
 
-    public String getEventId() {
-        return eventId;
-    }
-
     public String getMatchId() {
         return matchId;
     }
