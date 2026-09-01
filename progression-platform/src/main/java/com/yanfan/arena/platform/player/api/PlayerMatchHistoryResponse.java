@@ -23,12 +23,13 @@ public record PlayerMatchHistoryResponse(
         int kills,
         int deaths,
         int assists,
-        int xpEarned)
+    int xpEarned)
 {
     public static PlayerMatchHistoryResponse from(PlayerMatchHistoryProjection result) {
-        // Get the player's team match outcome from the stored winning team ID
-        MatchOutcome outcome =
-                result.getTeamId() == result.getWinningTeamId() ? MatchOutcome.WIN : MatchOutcome.LOSS;
+        MatchOutcome outcome = MatchOutcome.forTeam(
+                result.getTeamId(),
+                result.getWinningTeamId()
+        );
 
         return new PlayerMatchHistoryResponse(
                 UUID.fromString(result.getMatchId()),

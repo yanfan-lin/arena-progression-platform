@@ -25,7 +25,7 @@ public interface MatchParticipantResultRepository extends JpaRepository<MatchPar
             """)
     List<MatchParticipantResult> findAllByMatchId(String matchId);
 
-    // Load one player's complete match history and player stats by playerID
+    // Load one player's paginated match history with rating, XP and K/D/A
     @Query(
             value = """
                     SELECT mr.matchId AS matchId,

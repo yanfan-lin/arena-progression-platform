@@ -29,14 +29,14 @@ public class MatchQueryService {
     public MatchQueryService(
             MatchResultRepository matchResultRepository,
             MatchTeamResultRepository matchTeamResultRepository,
-            MatchParticipantResultRepository matchParticipantResultRepository) {
+            MatchParticipantResultRepository matchParticipantResultRepository)
+    {
         this.matchResultRepository = matchResultRepository;
         this.matchTeamResultRepository = matchTeamResultRepository;
         this.matchParticipantResultRepository = matchParticipantResultRepository;
     }
 
-    // Read the match and its child snapshots and
-    // return the read-only match details
+    // Return one match with its stored team and participant snapshots
     @Transactional(readOnly = true)
     public MatchDetailsResponse get(UUID matchId) {
 
@@ -73,6 +73,5 @@ public class MatchQueryService {
                 teams,
                 participants);
     }
-
 
 }

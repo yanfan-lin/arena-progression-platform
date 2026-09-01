@@ -2,7 +2,7 @@ package com.yanfan.arena.platform.match.api;
 
 import com.yanfan.arena.platform.match.persistence.entity.MatchTeamResult;
 
-// Represent one team's match result using stored match values
+// Represent one team's match result using stored match values.
 public record MatchTeamResponse(
         Long teamId,
         String teamName,
@@ -14,14 +14,15 @@ public record MatchTeamResponse(
 
     public static MatchTeamResponse from(
             MatchTeamResult result,
-            long winningTeamId) {
+            long winningTeamId)
+    {
 
-        MatchOutcome outcome = result.getId().getTeamId() == winningTeamId
-                ? MatchOutcome.WIN
-                : MatchOutcome.LOSS;
+        Long teamId = result.getId().getTeamId();
+
+        MatchOutcome outcome = MatchOutcome.forTeam(teamId, winningTeamId);
 
         return new MatchTeamResponse(
-                result.getId().getTeamId(),
+                teamId,
                 result.getTeamNameSnapshot(),
                 outcome,
                 result.getRatingBefore(),

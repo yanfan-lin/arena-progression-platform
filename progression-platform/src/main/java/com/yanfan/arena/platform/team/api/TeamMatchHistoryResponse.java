@@ -20,14 +20,13 @@ public record TeamMatchHistoryResponse(
         int ratingAfter,
         long kills,
         long deaths,
-        long assists)
+    long assists)
 {
     public static TeamMatchHistoryResponse from(TeamMatchHistoryProjection result) {
-        // Determine the team's match outcome
-        MatchOutcome outcome =
-                result.getTeamId() == result.getWinningTeamId()
-                        ? MatchOutcome.WIN
-                        : MatchOutcome.LOSS;
+        MatchOutcome outcome = MatchOutcome.forTeam(
+                result.getTeamId(),
+                result.getWinningTeamId()
+        );
 
         return new TeamMatchHistoryResponse(
                 UUID.fromString(result.getMatchId()),
