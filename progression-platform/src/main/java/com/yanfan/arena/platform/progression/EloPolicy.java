@@ -29,8 +29,9 @@ public final class EloPolicy {
     }
 
     public static RatingChange calculate(int winnerRating, int loserRating) {
+
         // Use loser minus winner so a positive value means the winner was the underdog.
-        int effectiveDifference = clamp(
+        int effectiveDifference = Math.clamp(
                 loserRating - winnerRating,
                 -MAX_RATING_DIFFERENCE,
                 MAX_RATING_DIFFERENCE);
@@ -49,14 +50,7 @@ public final class EloPolicy {
 
         return new RatingChange(
                 Math.addExact(winnerRating, appliedChange),
-                Math.addExact(loserRating, -appliedChange)
-        );
-
+                Math.addExact(loserRating, -appliedChange));
     }
-
-    private static int clamp(int value, int min, int max) {
-        return Math.max(min, Math.min(max, value));
-    }
-
 
 }
