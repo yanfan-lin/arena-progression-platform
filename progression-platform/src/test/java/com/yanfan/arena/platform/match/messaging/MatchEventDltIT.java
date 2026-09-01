@@ -12,10 +12,10 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.mysql.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.KafkaContainer;
+import org.testcontainers.mysql.MySQLContainer;
 import tools.jackson.databind.ObjectMapper;
 
 import java.nio.charset.StandardCharsets;
@@ -23,14 +23,11 @@ import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static com.yanfan.arena.platform.test.IntegrationTestContainers.kafkaContainer;
-import static com.yanfan.arena.platform.test.IntegrationTestContainers.mysqlContainer;
-import static com.yanfan.arena.platform.test.IntegrationTestContainers.registerKafkaProperties;
-import static com.yanfan.arena.platform.test.IntegrationTestContainers.registerMySqlProperties;
+import static com.yanfan.arena.platform.test.IntegrationTestContainers.*;
 import static com.yanfan.arena.platform.test.KafkaTestSupport.awaitDltRecord;
 import static org.assertj.core.api.Assertions.assertThat;
 
-// Verify that permanent match failures are routed to the dead-letter topic.
+// Verify failed match events are routed to the dead-letter topic.
 @Testcontainers
 @SpringBootTest(properties = {
         "spring.kafka.listener.auto-startup=true",
@@ -67,6 +64,7 @@ public class MatchEventDltIT {
 
     @Test
     void malformedJsonIsPublishedToDlt() throws Exception {
+
         String badJson = "{not-valid-json";
 
         kafkaTemplate.send("arena-match-completed", "bad-key", badJson)
@@ -98,6 +96,7 @@ public class MatchEventDltIT {
 
     @Test
     void permanentFailureIsPublishedToDltAndConsumerContinues() throws Exception {
+
         MatchProcessorTestData.insertThreeVsThreePlayersAndTeams(jdbcTemplate);
 
         // Publish an event that fails permanently

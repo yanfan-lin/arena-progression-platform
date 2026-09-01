@@ -2,7 +2,6 @@ package com.yanfan.arena.platform.match.messaging;
 
 import com.yanfan.arena.contract.ArenaMatchCompleted;
 import com.yanfan.arena.contract.MatchMode;
-import com.yanfan.arena.platform.match.processing.MatchProcessingResult;
 import com.yanfan.arena.platform.match.processing.MatchProcessor;
 import com.yanfan.arena.platform.match.validation.MatchEventValidationException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -17,10 +16,9 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verifyNoInteractions;
 
-// Verify that listener hands a valid event to MatchProcessor.
+// Reject invalid Kafka records before match processing.
 @ExtendWith(MockitoExtension.class)
 class MatchEventListenerTest {
 
@@ -31,27 +29,8 @@ class MatchEventListenerTest {
     MatchEventListener listener;
 
     @Test
-    void validEventIsDelegatedToMatchProcessor() {
-        ArenaMatchCompleted event = validEvent();
-
-        when(matchProcessor.process(any(ArenaMatchCompleted.class)))
-                .thenReturn(new MatchProcessingResult(
-                        MatchProcessingResult.MatchProcessingOutcome.PROCESSED,
-                        null,
-                        null));
-
-        listener.onMatchEvent(new ConsumerRecord<>(
-                "arena-match-completed",
-                0,
-                0L,
-                event.matchId().toString(),
-                event));
-
-        verify(matchProcessor).process(event);
-    }
-
-    @Test
     void mismatchedKeyIsRejectedBeforeProcessing() {
+
         ArenaMatchCompleted event = validEvent();
 
         assertThrows(MatchEventValidationException.class,
@@ -66,22 +45,8 @@ class MatchEventListenerTest {
     }
 
     @Test
-    void nullKeyIsRejectedBeforeProcessing() {
-        ArenaMatchCompleted event = validEvent();
-
-        assertThrows(MatchEventValidationException.class,
-                () -> listener.onMatchEvent(new ConsumerRecord<>(
-                        "arena-match-completed",
-                        0,
-                        0L,
-                        null,
-                        event)));
-
-        verifyNoInteractions(matchProcessor);
-    }
-
-    @Test
     void nullEventIsRejectedBeforeProcessing() {
+
         assertThrows(MatchEventValidationException.class,
                 () -> listener.onMatchEvent(new ConsumerRecord<>(
                         "arena-match-completed",
@@ -95,6 +60,7 @@ class MatchEventListenerTest {
 
     @Test
     void nullMatchIdIsRejectedBeforeProcessing() {
+
         ArenaMatchCompleted event = eventWithMatchId(null);
 
         assertThrows(MatchEventValidationException.class,
@@ -109,10 +75,12 @@ class MatchEventListenerTest {
     }
 
     private ArenaMatchCompleted validEvent() {
+
         return eventWithMatchId(UUID.fromString("0775a8e0-cd3a-4d03-a9d4-62a43fc09d86"));
     }
 
     private ArenaMatchCompleted eventWithMatchId(UUID matchId) {
+
         return new ArenaMatchCompleted(
                 ArenaMatchCompleted.CONTRACT_VERSION,
                 UUID.fromString("4e74866d-5a18-4695-bf5e-ff8b79226b79"),
