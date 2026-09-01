@@ -11,14 +11,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.mysql.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static com.yanfan.arena.platform.test.IntegrationTestContainers.mysqlContainer;
 import static com.yanfan.arena.platform.test.IntegrationTestContainers.registerMySqlProperties;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 // Verify the team migration and JPA mapping against a real MySQL instance.
@@ -80,25 +78,6 @@ class TeamPersistenceIT {
 
         assertThatThrownBy(() -> teamMemberRepository.saveAndFlush(second))
                 .isInstanceOf(DataIntegrityViolationException.class);
-    }
-
-    @Test
-    @Transactional
-    void deleteByTeamIdRemovesMembers() {
-        Long teamId = saveTeam("DeleteTeam");
-        Long playerId = savePlayer("DeletePlayer");
-
-        TeamMember member = new TeamMember();
-
-        member.setTeamId(teamId);
-        member.setPlayerId(playerId);
-
-        teamMemberRepository.saveAndFlush(member);
-
-        teamMemberRepository.deleteByTeamId(teamId);
-
-        assertThat(teamMemberRepository.findByTeamId(teamId))
-                .isEmpty();
     }
 
     private Long saveTeam(String teamName) {

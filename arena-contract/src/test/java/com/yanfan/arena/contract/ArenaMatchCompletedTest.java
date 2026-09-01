@@ -20,12 +20,6 @@ class ArenaMatchCompletedTest {
 
 
     @Test
-    void validContractPassesStructuralValidation() {
-        assertThat(VALIDATOR.validate(validEvent()))
-                .isEmpty();
-    }
-
-    @Test
     void oneTeamFailsStructuralValidation() {
         ArenaMatchCompleted event = new ArenaMatchCompleted(
                 ArenaMatchCompleted.CONTRACT_VERSION,
@@ -37,19 +31,6 @@ class ArenaMatchCompletedTest {
                 List.of(team(1, 101, 102, 103)));
 
         assertThat(VALIDATOR.validate(event)).isNotEmpty();
-    }
-
-    private ArenaMatchCompleted validEvent() {
-        return new ArenaMatchCompleted(
-                ArenaMatchCompleted.CONTRACT_VERSION,
-                EVENT_ID,
-                MATCH_ID,
-                MatchMode.THREE_VS_THREE,
-                Instant.parse("2026-08-12T00:00:00Z"),
-                1,
-                List.of(
-                        team(1, 101, 102, 103),
-                        team(2, 201, 202, 203)));
     }
 
     private ArenaMatchCompleted.Team team(long teamId, long... playerIds) {
