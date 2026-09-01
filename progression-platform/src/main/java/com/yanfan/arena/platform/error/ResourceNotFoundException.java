@@ -1,10 +1,13 @@
 package com.yanfan.arena.platform.error;
 
-// Map to 404: the requested resource does not exist.
+import org.springframework.http.HttpStatus;
+
+// Represent a missing resource as HTTP 404.
 public class ResourceNotFoundException extends ApiException {
 
     public ResourceNotFoundException(String code, String message) {
-        super(code, message);
+
+        super(HttpStatus.NOT_FOUND, code, message);
     }
 
 }

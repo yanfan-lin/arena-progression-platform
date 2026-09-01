@@ -21,40 +21,18 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ProblemDetail handleNotFound(ResourceNotFoundException ex,
-                                        HttpServletRequest request)
-    {
+    @ExceptionHandler(ApiException.class)
+    public ProblemDetail handleApiException(
+            ApiException exception,
+            HttpServletRequest request) {
         return toProblem(
-                HttpStatus.NOT_FOUND,
-                ex.getCode(),
-                ex.getMessage(),
+                exception.getStatus(),
+                exception.getCode(),
+                exception.getMessage(),
                 request);
-    }
-
-    @ExceptionHandler(BadRequestException.class)
-    public ProblemDetail handleBadRequest(BadRequestException ex,
-                                          HttpServletRequest request)
-    {
-        return toProblem(
-                HttpStatus.BAD_REQUEST,
-                ex.getCode(),
-                ex.getMessage(),
-                request);
-    }
-
-    @ExceptionHandler(ConflictException.class)
-    public ProblemDetail handleConflict(ConflictException ex,
-                                        HttpServletRequest request)
-    {
-        return toProblem(
-                HttpStatus.CONFLICT,
-                ex.getCode(),
-                ex.getMessage(),
-                request);
-
     }
 
     @Override
@@ -62,8 +40,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             MethodArgumentNotValidException ex,
             HttpHeaders headers,
             HttpStatusCode status,
-            WebRequest request)
-    {
+            WebRequest request) {
         ProblemDetail problem = toProblem(
                 HttpStatus.BAD_REQUEST,
                 "VALIDATION_FAILED",
@@ -79,7 +56,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         problem.setProperty("fieldErrors", fieldErrors);
 
         return ResponseEntity.badRequest().body(problem);
-
     }
 
     @Override
@@ -89,11 +65,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             HttpStatusCode status,
             WebRequest request)
     {
-        return ResponseEntity.badRequest().body(toProblem(
-                HttpStatus.BAD_REQUEST,
-                "MALFORMED_JSON",
-                "Request body is not valid JSON",
-                request));
+        return ResponseEntity.badRequest()
+                .body(toProblem(
+                        HttpStatus.BAD_REQUEST,
+                        "MALFORMED_JSON",
+                        "Request body is not valid JSON",
+                        request)
+                );
     }
 
     @ExceptionHandler(Exception.class)
@@ -115,7 +93,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                                     String detail,
                                     HttpServletRequest request)
     {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
+        ProblemDetail problem =
+                ProblemDetail.forStatusAndDetail(status, detail);
 
         problem.setTitle(status.getReasonPhrase());
 

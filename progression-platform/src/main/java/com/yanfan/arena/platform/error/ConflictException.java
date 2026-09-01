@@ -1,11 +1,13 @@
 package com.yanfan.arena.platform.error;
 
-// Map to 409: the request conflicts with current state
-// ex: a display name that is already taken
+import org.springframework.http.HttpStatus;
+
+// Represent a request that conflicts with current state as HTTP 409.
 public class ConflictException extends ApiException {
 
     public ConflictException(String code, String message) {
-        super(code, message);
+
+        super(HttpStatus.CONFLICT, code, message);
     }
 
 }
