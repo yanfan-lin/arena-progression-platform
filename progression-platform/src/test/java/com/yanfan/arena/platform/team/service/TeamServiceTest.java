@@ -66,9 +66,9 @@ class TeamServiceTest {
         when(teamRepository.saveAndFlush(any(Team.class)))
                 .thenThrow(new DataIntegrityViolationException("duplicate key"));
 
-        CreateTeamRequest request = new CreateTeamRequest();
-        request.setName("ExampleTeam");
-        request.setMode(ArenaMode.THREE_VS_THREE);
+        CreateTeamRequest request = new CreateTeamRequest(
+                "ExampleTeam",
+                ArenaMode.THREE_VS_THREE);
 
         assertThatThrownBy(() -> teamService.create(request))
                 .isInstanceOf(ConflictException.class)
@@ -103,8 +103,8 @@ class TeamServiceTest {
         when(playerRepository.findAllById(List.of(10L, 11L)))
                 .thenReturn(List.of(player1, player2));
 
-        ReplaceRosterRequest request = new ReplaceRosterRequest();
-        request.setPlayerIds(List.of(10L, 11L));
+        ReplaceRosterRequest request =
+                new ReplaceRosterRequest(List.of(10L, 11L));
 
         TeamResponse response = teamService.replaceRoster(1L, request);
 
@@ -126,8 +126,8 @@ class TeamServiceTest {
         when(teamRepository.findByIdForUpdate(1L))
                 .thenReturn(Optional.of(team));
 
-        ReplaceRosterRequest request = new ReplaceRosterRequest();
-        request.setPlayerIds(List.of(10L));
+        ReplaceRosterRequest request =
+                new ReplaceRosterRequest(List.of(10L));
 
         assertThatThrownBy(() -> teamService.replaceRoster(1L, request))
                 .isInstanceOf(ConflictException.class)
@@ -147,8 +147,8 @@ class TeamServiceTest {
         when(playerRepository.findAllById(List.of(10L, 11L)))
                 .thenReturn(List.of(player1));
 
-        ReplaceRosterRequest request = new ReplaceRosterRequest();
-        request.setPlayerIds(List.of(10L, 11L));
+        ReplaceRosterRequest request =
+                new ReplaceRosterRequest(List.of(10L, 11L));
 
         assertThatThrownBy(() -> teamService.replaceRoster(1L, request))
                 .isInstanceOf(ResourceNotFoundException.class)
@@ -169,8 +169,8 @@ class TeamServiceTest {
         when(playerRepository.findAllById(List.of(10L)))
                 .thenReturn(List.of(retired));
 
-        ReplaceRosterRequest request = new ReplaceRosterRequest();
-        request.setPlayerIds(List.of(10L));
+        ReplaceRosterRequest request =
+                new ReplaceRosterRequest(List.of(10L));
 
         assertThatThrownBy(() -> teamService.replaceRoster(1L, request))
                 .isInstanceOf(ConflictException.class)

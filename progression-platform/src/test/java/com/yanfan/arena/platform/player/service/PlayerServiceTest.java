@@ -58,8 +58,8 @@ class PlayerServiceTest {
         when(playerRepository.saveAndFlush(any(Player.class)))
                 .thenThrow(new DataIntegrityViolationException("duplicate key"));
 
-        CreatePlayerRequest request = new CreatePlayerRequest();
-        request.setDisplayName("ArenaExamplePlayer");
+        CreatePlayerRequest request =
+                new CreatePlayerRequest("ArenaExamplePlayer");
 
         assertThatThrownBy(() -> playerService.create(request))
                 .isInstanceOf(ConflictException.class)
@@ -146,6 +146,7 @@ class PlayerServiceTest {
 
     @Test
     void retireRejectsPlayerOnActiveTeam() {
+
         Player player = new Player();
         player.setDisplayName("ArenaExamplePlayer");
 
@@ -163,6 +164,7 @@ class PlayerServiceTest {
 
     @Test
     void getReturnsCachedPlayerWithoutQueryingDatabase() {
+
         PlayerResponse cachedResponse = new PlayerResponse(
                 1L,
                 "CachedPlayer",

@@ -58,17 +58,17 @@ public class TeamService {
     @Transactional
     public TeamResponse create(CreateTeamRequest request) {
 
-        String name = request.getName();
+        String name = request.name();
 
         // If the same team name already exists in this mode, stop and return 409
-        if (teamRepository.existsByModeAndNameIgnoreCase(request.getMode(), name)) {
+        if (teamRepository.existsByModeAndNameIgnoreCase(request.mode(), name)) {
             throw new ConflictException("TEAM_NAME_TAKEN",
                     "A team with this name already exists in this mode");
         }
 
         Team team = new Team();
         team.setName(name);
-        team.setMode(request.getMode());
+        team.setMode(request.mode());
 
         try {
             // Save the team now. If two requests use the same name at the same time,
@@ -150,7 +150,7 @@ public class TeamService {
             throw new ConflictException("TEAM_NOT_DRAFT", "Only draft teams can change their roster");
         }
 
-        List<Long> playerIds = request.getPlayerIds();
+        List<Long> playerIds = request.playerIds();
 
         if (playerIds.stream().distinct().count() != playerIds.size()) {
             throw new ConflictException("ROSTER_INVALID", "Roster contains duplicate players");

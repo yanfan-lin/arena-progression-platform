@@ -47,7 +47,8 @@ public class PlayerService {
 
     @Transactional
     public PlayerResponse create(CreatePlayerRequest request) {
-        String displayName = request.getDisplayName();
+
+        String displayName = request.displayName();
 
         // Check whether the name is already used
         if (playerRepository.existsByDisplayNameIgnoreCase(displayName)) {
@@ -71,6 +72,7 @@ public class PlayerService {
     }
 
     public PlayerResponse get(Long playerId) {
+
         Optional<PlayerResponse> cachedResponse =
                 playerProfileCache.find(playerId);
 
@@ -93,6 +95,7 @@ public class PlayerService {
 
     @Transactional
     public PlayerResponse retire(Long playerId) {
+
         // Prevent retirement while another request is activating a team with this player
         Player player = playerRepository.findByIdForUpdate(playerId)
                 .orElseThrow(() -> new ResourceNotFoundException(
