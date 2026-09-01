@@ -6,7 +6,6 @@ import com.yanfan.arena.simulator.simulation.match.InsufficientTeamsException;
 import com.yanfan.arena.simulator.simulation.match.MatchSimulationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
@@ -36,7 +35,6 @@ public class SimulationRunService {
     // canceled when the match simulation run completes, stops or fails
     private ScheduledFuture<?> currentTask;
 
-    @Autowired
     public SimulationRunService(MatchSimulationService matchSimulationService,
                                 TaskScheduler taskScheduler,
                                 Clock clock)

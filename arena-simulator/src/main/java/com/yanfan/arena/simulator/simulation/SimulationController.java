@@ -10,7 +10,6 @@ import com.yanfan.arena.simulator.simulation.setup.SimulationSetupRequest;
 import com.yanfan.arena.simulator.simulation.setup.SimulationSetupResponse;
 import com.yanfan.arena.simulator.simulation.setup.SimulationSetupService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,7 +26,6 @@ public class SimulationController {
 
     private final SimulationRunService simulationRunService;
 
-    @Autowired
     public SimulationController(SimulationSetupService simulationSetupService,
                                 MatchSimulationService matchSimulationService,
                                 SimulationRunService simulationRunService)

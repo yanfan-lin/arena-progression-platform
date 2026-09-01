@@ -4,7 +4,6 @@ import com.yanfan.arena.contract.ArenaMatchCompleted;
 import com.yanfan.arena.contract.MatchMode;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Set;
@@ -16,7 +15,6 @@ public class MatchEventValidator {
 
     private final Validator validator;
 
-    @Autowired
     public MatchEventValidator(Validator validator) {
         this.validator = validator;
     }

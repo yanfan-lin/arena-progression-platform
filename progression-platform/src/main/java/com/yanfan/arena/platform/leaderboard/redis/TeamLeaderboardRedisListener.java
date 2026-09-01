@@ -2,7 +2,6 @@ package com.yanfan.arena.platform.leaderboard.redis;
 
 import com.yanfan.arena.platform.team.domain.Team;
 import com.yanfan.arena.platform.team.persistence.TeamRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -19,7 +18,6 @@ public class TeamLeaderboardRedisListener {
 
     private final TeamLeaderboardProjectionLock projectionLock;
 
-    @Autowired
     public TeamLeaderboardRedisListener(
             TeamRepository teamRepository,
             TeamLeaderboardRedisStore leaderboardStore,

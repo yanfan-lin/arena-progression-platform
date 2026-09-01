@@ -1,6 +1,5 @@
 package com.yanfan.arena.platform.player.cache;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -11,7 +10,6 @@ public class PlayerProfileCacheListener {
 
     private final PlayerProfileCache playerProfileCache;
 
-    @Autowired
     public PlayerProfileCacheListener(PlayerProfileCache playerProfileCache) {
         this.playerProfileCache = playerProfileCache;
     }

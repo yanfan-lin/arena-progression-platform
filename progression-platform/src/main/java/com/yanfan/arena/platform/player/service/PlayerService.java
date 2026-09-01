@@ -9,7 +9,6 @@ import com.yanfan.arena.platform.player.domain.Player;
 import com.yanfan.arena.platform.player.domain.PlayerStatus;
 import com.yanfan.arena.platform.player.persistence.PlayerRepository;
 import com.yanfan.arena.platform.team.persistence.TeamMemberRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +32,6 @@ public class PlayerService {
 
     private final Clock clock;
 
-    @Autowired
     public PlayerService(PlayerRepository playerRepository,
                          PlayerProfileCache playerProfileCache,
                          TeamMemberRepository teamMemberRepository,

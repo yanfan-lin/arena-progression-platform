@@ -16,7 +16,6 @@ import com.yanfan.arena.platform.team.domain.TeamMember;
 import com.yanfan.arena.platform.team.domain.TeamStatus;
 import com.yanfan.arena.platform.team.persistence.TeamMemberRepository;
 import com.yanfan.arena.platform.team.persistence.TeamRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -43,7 +42,6 @@ public class TeamService {
 
     private final ApplicationEventPublisher eventPublisher;
 
-    @Autowired
     public TeamService(TeamRepository teamRepository,
                        TeamMemberRepository teamMemberRepository,
                        PlayerRepository playerRepository,

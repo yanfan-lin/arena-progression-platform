@@ -1,6 +1,5 @@
 package com.yanfan.arena.platform.leaderboard.redis;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.info.Info;
 import org.springframework.boot.actuate.info.InfoContributor;
 import org.springframework.stereotype.Component;
@@ -14,7 +13,6 @@ public class TeamLeaderboardProjectionInfo implements InfoContributor {
 
     private final TeamLeaderboardProjectionHealth projectionHealth;
 
-    @Autowired
     public TeamLeaderboardProjectionInfo(TeamLeaderboardProjectionHealth projectionHealth) {
         this.projectionHealth = projectionHealth;
     }

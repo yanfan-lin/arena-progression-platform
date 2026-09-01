@@ -8,7 +8,6 @@ import com.yanfan.arena.platform.team.domain.Team;
 import com.yanfan.arena.platform.team.domain.TeamStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -52,7 +51,6 @@ public class TeamLeaderboardRedisStore {
 
     private final TeamLeaderboardProjectionHealth projectionHealth;
 
-    @Autowired
     public TeamLeaderboardRedisStore(
             StringRedisTemplate redisTemplate,
             TeamLeaderboardProjectionHealth projectionHealth)

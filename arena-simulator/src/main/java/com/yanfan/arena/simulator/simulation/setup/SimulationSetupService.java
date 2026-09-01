@@ -2,7 +2,6 @@ package com.yanfan.arena.simulator.simulation.setup;
 
 import com.yanfan.arena.contract.MatchMode;
 import com.yanfan.arena.simulator.client.PlatformClient;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -15,7 +14,6 @@ public class SimulationSetupService {
 
     private final PlatformClient platformClient;
 
-    @Autowired
     public SimulationSetupService(PlatformClient platformClient) {
         this.platformClient = platformClient;
     }

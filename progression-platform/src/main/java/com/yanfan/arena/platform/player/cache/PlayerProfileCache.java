@@ -3,7 +3,6 @@ package com.yanfan.arena.platform.player.cache;
 import com.yanfan.arena.platform.player.api.PlayerResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.Cursor;
@@ -30,7 +29,6 @@ public class PlayerProfileCache {
 
     private final Duration ttl;
 
-    @Autowired
     public PlayerProfileCache(StringRedisTemplate redisTemplate,
                               ObjectMapper objectMapper,
                               @Value("${arena.cache.player-profile-ttl}") Duration ttl)

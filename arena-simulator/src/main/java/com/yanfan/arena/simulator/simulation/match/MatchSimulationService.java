@@ -3,7 +3,6 @@ package com.yanfan.arena.simulator.simulation.match;
 import com.yanfan.arena.contract.ArenaMatchCompleted;
 import com.yanfan.arena.contract.MatchMode;
 import com.yanfan.arena.simulator.messaging.MatchEventPublisher;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 // Generate arena matches and wait for Kafka to accept them.
@@ -14,7 +13,6 @@ public class MatchSimulationService {
 
     private final MatchEventPublisher matchEventPublisher;
 
-    @Autowired
     public MatchSimulationService(MatchGenerator matchGenerator, MatchEventPublisher matchEventPublisher) {
         this.matchGenerator = matchGenerator;
         this.matchEventPublisher = matchEventPublisher;

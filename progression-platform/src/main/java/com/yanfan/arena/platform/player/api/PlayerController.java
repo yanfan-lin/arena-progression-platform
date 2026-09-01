@@ -6,7 +6,6 @@ import com.yanfan.arena.platform.player.service.PlayerService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -22,7 +21,6 @@ public class PlayerController {
 
     private final PlayerMatchHistoryService playerMatchHistoryService;
 
-    @Autowired
     public PlayerController(PlayerService playerService, PlayerMatchHistoryService playerMatchHistoryService) {
         this.playerService = playerService;
         this.playerMatchHistoryService = playerMatchHistoryService;

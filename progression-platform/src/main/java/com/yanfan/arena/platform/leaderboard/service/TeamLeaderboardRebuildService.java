@@ -9,7 +9,6 @@ import com.yanfan.arena.platform.team.domain.TeamStatus;
 import com.yanfan.arena.platform.team.persistence.TeamRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -31,7 +30,6 @@ public class TeamLeaderboardRebuildService {
 
     private final PlayerProfileCache playerProfileCache;
 
-    @Autowired
     public TeamLeaderboardRebuildService(
             TeamRepository teamRepository,
             TeamLeaderboardRedisStore leaderboardStore,

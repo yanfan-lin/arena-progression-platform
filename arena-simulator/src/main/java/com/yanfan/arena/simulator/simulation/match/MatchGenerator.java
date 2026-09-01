@@ -4,7 +4,6 @@ import com.yanfan.arena.contract.ArenaMatchCompleted;
 import com.yanfan.arena.contract.MatchMode;
 import com.yanfan.arena.simulator.client.MatchCandidateResponse;
 import com.yanfan.arena.simulator.client.PlatformClient;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.Clock;
@@ -21,7 +20,6 @@ public class MatchGenerator {
 
     private final Clock clock;
 
-    @Autowired
     public MatchGenerator(PlatformClient platformClient, Clock clock) {
         this.platformClient = platformClient;
         this.clock = clock;

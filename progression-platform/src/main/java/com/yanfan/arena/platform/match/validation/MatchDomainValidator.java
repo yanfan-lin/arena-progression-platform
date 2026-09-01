@@ -7,7 +7,6 @@ import com.yanfan.arena.platform.team.domain.TeamMember;
 import com.yanfan.arena.platform.team.domain.TeamStatus;
 import com.yanfan.arena.platform.team.persistence.TeamMemberRepository;
 import com.yanfan.arena.platform.team.persistence.TeamRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.Clock;
@@ -31,7 +30,6 @@ public class MatchDomainValidator {
 
     private final Clock clock;
 
-    @Autowired
     public MatchDomainValidator(TeamRepository teamRepository, TeamMemberRepository teamMemberRepository, Clock clock) {
         this.teamRepository = teamRepository;
         this.teamMemberRepository = teamMemberRepository;

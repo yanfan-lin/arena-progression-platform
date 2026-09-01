@@ -6,7 +6,6 @@ import com.yanfan.arena.platform.match.persistence.repository.MatchTeamResultRep
 import com.yanfan.arena.platform.team.api.TeamMatchHistoryResponse;
 import com.yanfan.arena.platform.team.persistence.TeamRepository;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -20,7 +19,6 @@ public class TeamMatchHistoryService {
 
     private final MatchTeamResultRepository matchTeamResultRepository;
 
-    @Autowired
     public TeamMatchHistoryService(TeamRepository teamRepository,
                                    MatchTeamResultRepository matchTeamResultRepository)
     {

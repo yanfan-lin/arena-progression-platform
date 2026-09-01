@@ -8,7 +8,6 @@ import com.yanfan.arena.platform.match.persistence.entity.MatchResult;
 import com.yanfan.arena.platform.match.persistence.repository.MatchParticipantResultRepository;
 import com.yanfan.arena.platform.match.persistence.repository.MatchResultRepository;
 import com.yanfan.arena.platform.match.persistence.repository.MatchTeamResultRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +24,6 @@ public class MatchQueryService {
 
     private final MatchParticipantResultRepository matchParticipantResultRepository;
 
-    @Autowired
     public MatchQueryService(
             MatchResultRepository matchResultRepository,
             MatchTeamResultRepository matchTeamResultRepository,

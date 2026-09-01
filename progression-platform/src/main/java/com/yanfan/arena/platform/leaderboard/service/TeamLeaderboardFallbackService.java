@@ -10,7 +10,6 @@ import com.yanfan.arena.platform.team.domain.ArenaMode;
 import com.yanfan.arena.platform.team.domain.Team;
 import com.yanfan.arena.platform.team.domain.TeamStatus;
 import com.yanfan.arena.platform.team.persistence.TeamRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,7 +26,6 @@ public class TeamLeaderboardFallbackService {
 
     private final TeamRepository teamRepository;
 
-    @Autowired
     public TeamLeaderboardFallbackService(
             TeamLeaderboardRepository leaderboardRepository,
             TeamRepository teamRepository)

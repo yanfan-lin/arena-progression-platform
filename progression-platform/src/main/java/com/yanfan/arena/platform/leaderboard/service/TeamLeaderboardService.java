@@ -11,7 +11,6 @@ import com.yanfan.arena.platform.team.domain.ArenaMode;
 import com.yanfan.arena.platform.team.domain.Team;
 import com.yanfan.arena.platform.team.domain.TeamStatus;
 import com.yanfan.arena.platform.team.persistence.TeamRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,7 +32,6 @@ public class TeamLeaderboardService {
 
     private final TeamLeaderboardProjectionHealth projectionHealth;
 
-    @Autowired
     public TeamLeaderboardService(
             TeamLeaderboardRedisStore redisStore,
             TeamLeaderboardFallbackService fallbackService,

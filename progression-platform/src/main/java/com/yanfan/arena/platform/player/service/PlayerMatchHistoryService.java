@@ -5,7 +5,6 @@ import com.yanfan.arena.platform.error.ResourceNotFoundException;
 import com.yanfan.arena.platform.match.persistence.repository.MatchParticipantResultRepository;
 import com.yanfan.arena.platform.player.api.PlayerMatchHistoryResponse;
 import com.yanfan.arena.platform.player.persistence.PlayerRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -18,7 +17,6 @@ public class PlayerMatchHistoryService {
 
     private final MatchParticipantResultRepository matchParticipantResultRepository;
 
-    @Autowired
     public PlayerMatchHistoryService(PlayerRepository playerRepository,
                                      MatchParticipantResultRepository matchParticipantResultRepository)
     {

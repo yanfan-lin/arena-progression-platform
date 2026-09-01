@@ -6,7 +6,6 @@ import com.yanfan.arena.platform.team.service.TeamService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -22,7 +21,6 @@ public class TeamController {
 
     private final TeamMatchHistoryService teamMatchHistoryService;
 
-    @Autowired
     public TeamController(TeamService teamService, TeamMatchHistoryService teamMatchHistoryService) {
         this.teamService = teamService;
         this.teamMatchHistoryService = teamMatchHistoryService;

@@ -2,7 +2,6 @@ package com.yanfan.arena.simulator.messaging;
 
 import com.yanfan.arena.contract.ArenaMatchCompleted;
 import com.yanfan.arena.contract.KafkaTopics;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Component;
@@ -15,7 +14,6 @@ public class MatchEventPublisher {
 
     private final KafkaTemplate<String, ArenaMatchCompleted> kafkaTemplate;
 
-    @Autowired
     public MatchEventPublisher(KafkaTemplate<String, ArenaMatchCompleted> kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;
     }
