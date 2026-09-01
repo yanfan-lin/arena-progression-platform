@@ -64,6 +64,7 @@ public class TeamLeaderboardRedisStore {
     public void update(Team team) {
 
         if (team.getStatus() != TeamStatus.ACTIVE) {
+
             remove(team);
 
             return;
@@ -254,6 +255,7 @@ public class TeamLeaderboardRedisStore {
                     );
 
             if (zeroBasedRank == null) {
+
                 return Optional.empty();
             }
 
@@ -275,9 +277,8 @@ public class TeamLeaderboardRedisStore {
         }
     }
 
+    private void remove(Team team) {
 
-
-    public void remove(Team team) {
         String member =
                 TeamLeaderboardMember.fromTeamId(team.getTeamId());
 
