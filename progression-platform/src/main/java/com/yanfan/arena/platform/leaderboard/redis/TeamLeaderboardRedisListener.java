@@ -6,6 +6,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import java.util.concurrent.locks.Lock;
+
 import java.util.List;
 
 // Refresh Redis leaderboard scores after team changes commit to MySQL
@@ -16,12 +18,12 @@ public class TeamLeaderboardRedisListener {
 
     private final TeamLeaderboardRedisStore leaderboardStore;
 
-    private final TeamLeaderboardProjectionLock projectionLock;
+    private final Lock projectionLock;
 
     public TeamLeaderboardRedisListener(
             TeamRepository teamRepository,
             TeamLeaderboardRedisStore leaderboardStore,
-            TeamLeaderboardProjectionLock projectionLock)
+            Lock projectionLock)
     {
         this.teamRepository = teamRepository;
         this.leaderboardStore = leaderboardStore;

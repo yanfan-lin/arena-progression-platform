@@ -1,7 +1,6 @@
 package com.yanfan.arena.platform.leaderboard.service;
 
 import com.yanfan.arena.platform.leaderboard.redis.TeamLeaderboardProjectionHealth;
-import com.yanfan.arena.platform.leaderboard.redis.TeamLeaderboardProjectionLock;
 import com.yanfan.arena.platform.leaderboard.redis.TeamLeaderboardRedisStore;
 import com.yanfan.arena.platform.player.cache.PlayerProfileCache;
 import com.yanfan.arena.platform.team.domain.Team;
@@ -13,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.locks.Lock;
 
 // Rebuild Redis team leaderboards from active MySQL teams
 @Service
@@ -26,7 +26,7 @@ public class TeamLeaderboardRebuildService {
 
     private final TeamLeaderboardProjectionHealth projectionHealth;
 
-    private final TeamLeaderboardProjectionLock projectionLock;
+    private final Lock projectionLock;
 
     private final PlayerProfileCache playerProfileCache;
 
@@ -34,7 +34,7 @@ public class TeamLeaderboardRebuildService {
             TeamRepository teamRepository,
             TeamLeaderboardRedisStore leaderboardStore,
             TeamLeaderboardProjectionHealth projectionHealth,
-            TeamLeaderboardProjectionLock projectionLock,
+            Lock projectionLock,
             PlayerProfileCache playerProfileCache)
     {
         this.teamRepository = teamRepository;

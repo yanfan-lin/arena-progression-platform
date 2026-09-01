@@ -6,6 +6,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.time.Clock;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 // Backend entry point
 @SpringBootApplication
@@ -19,5 +21,11 @@ public class ProgressionPlatformApplication {
     @Bean
     public Clock clock() {
         return Clock.systemUTC();
+    }
+
+    // Share one lock so rebuilds cannot overwrite committed leaderboard updates
+    @Bean
+    public Lock teamLeaderboardProjectionLock() {
+        return new ReentrantLock();
     }
 }
