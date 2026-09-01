@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
-// Define the mode, delay, and match limit for a continuous match simulation run.
+// Define the mode, delay, and match limit for scheduled match generation.
 public record SimulationRunRequest(
         @NotNull
         MatchMode mode,

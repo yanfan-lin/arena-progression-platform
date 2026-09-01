@@ -54,7 +54,6 @@ class SimulatorKafkaPublicationIT {
 
         ArenaMatchCompleted event = matchEvent();
 
-        // Consumer configs
         Map<String, Object> consumerProps = Map.of(
 
                 ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA.getBootstrapServers(),

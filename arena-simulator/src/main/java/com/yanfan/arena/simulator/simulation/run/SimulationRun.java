@@ -6,7 +6,7 @@ import com.yanfan.arena.contract.MatchMode;
 import java.time.Instant;
 import java.util.UUID;
 
-// Track the settings, progress and result of one continuous match simulation run.
+// Track the settings, progress and result of one scheduled match simulation run.
 final class SimulationRun {
 
     // Keep the run identity and settings unchanged after it starts

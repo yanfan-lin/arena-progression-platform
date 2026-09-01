@@ -17,8 +17,8 @@ public record ArenaMatchCompleted(
         @NotNull MatchMode mode,
         @NotNull Instant completedAt,
         @Min(1) long winnerTeamId,
-        @NotNull @Size(min = 2, max = 2) List<@NotNull @Valid Team> teams) {
-
+        @NotNull @Size(min = 2, max = 2) List<@NotNull @Valid Team> teams)
+{
     public static final int CONTRACT_VERSION = 1;
 
     // One participating team and its match roster
@@ -36,6 +36,5 @@ public record ArenaMatchCompleted(
             @NotNull @Min(0) Integer assists) {
 
     }
-
 
 }

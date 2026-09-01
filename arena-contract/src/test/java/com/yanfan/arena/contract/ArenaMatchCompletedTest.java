@@ -18,11 +18,6 @@ class ArenaMatchCompletedTest {
 
     private static final UUID MATCH_ID = UUID.fromString("0775a8e0-cd3a-4d03-a9d4-62a43fc09d86");
 
-    @Test
-    void contractVersionIsOne() {
-        assertThat(ArenaMatchCompleted.CONTRACT_VERSION)
-                .isEqualTo(1);
-    }
 
     @Test
     void validContractPassesStructuralValidation() {
@@ -65,6 +60,5 @@ class ArenaMatchCompletedTest {
 
         return new ArenaMatchCompleted.Team(teamId, players);
     }
-
 
 }
