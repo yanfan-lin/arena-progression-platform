@@ -50,13 +50,9 @@ class MatchGeneratorTest {
         List<MatchCandidateResponse> candidates = List.of(
                 new MatchCandidateResponse(
                         1L,
-                        mode,
-                        COMPLETED_AT.minusSeconds(60),
                         playerIds(1L, rosterSize)),
                 new MatchCandidateResponse(
                         2L,
-                        mode,
-                        COMPLETED_AT.minusSeconds(60),
                         playerIds(101L, rosterSize))
         );
 
@@ -113,6 +109,7 @@ class MatchGeneratorTest {
 
     // Build a complete roster for the requested arena mode
     private List<Long> playerIds(long firstPlayerId, int rosterSize) {
+
         List<Long> playerIds = new ArrayList<>();
 
         for (int index = 0; index < rosterSize; index++) {
@@ -123,12 +120,14 @@ class MatchGeneratorTest {
     }
 
     private int totalKills(ArenaMatchCompleted.Team team) {
+
         return team.participants().stream()
                 .mapToInt(ArenaMatchCompleted.Player::kills)
                 .sum();
     }
 
     private int totalDeaths(ArenaMatchCompleted.Team team) {
+
         return team.participants().stream()
                 .mapToInt(ArenaMatchCompleted.Player::deaths)
                 .sum();
@@ -136,6 +135,7 @@ class MatchGeneratorTest {
 
     // Ensure assists only come from kills made by teammates
     private void assertValidAssists(ArenaMatchCompleted.Team team) {
+
         int teamKills = totalKills(team);
 
         for (ArenaMatchCompleted.Player player : team.participants()) {

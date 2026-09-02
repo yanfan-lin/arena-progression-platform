@@ -131,8 +131,6 @@ public class TeamService {
         for (Team team : teams) {
             candidates.add(new MatchCandidateResponse(
                     team.getTeamId(),
-                    team.getMode(),
-                    team.getActivatedAt(),
                     playerIdsByTeam.getOrDefault(team.getTeamId(), List.of())
             ));
         }

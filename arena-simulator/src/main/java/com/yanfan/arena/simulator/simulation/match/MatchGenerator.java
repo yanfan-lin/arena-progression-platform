@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -169,7 +170,8 @@ public class MatchGenerator {
         // Build the K/D/A result for each player
         List<ArenaMatchCompleted.Player> players = new ArrayList<>();
 
-        int teamKills = calculateTotalKills(kills);
+        // Sum team kills to limit each player's assists
+        int teamKills = Arrays.stream(kills).sum();
 
         // Build each roster player's kills, deaths, and assists result
         for (int playerIndex = 0; playerIndex < team.playerIds().size(); playerIndex++) {
@@ -189,17 +191,6 @@ public class MatchGenerator {
 
         // Combine the team ID with its generated player stats
         return new ArenaMatchCompleted.Team(team.teamId(), players);
-    }
-
-    // Add every player's kills to get the team total
-    private int calculateTotalKills(int[] kills) {
-        int totalKills = 0;
-
-        for (int playerKills : kills) {
-            totalKills += playerKills;
-        }
-
-        return totalKills;
     }
 
 }
