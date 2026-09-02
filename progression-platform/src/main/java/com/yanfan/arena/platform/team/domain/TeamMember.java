@@ -29,10 +29,6 @@ public class TeamMember {
         this.addedAt = Instant.now();
     }
 
-    public Long getMemberId() {
-        return memberId;
-    }
-
     public Long getTeamId() {
         return teamId;
     }
@@ -48,10 +44,5 @@ public class TeamMember {
     public void setPlayerId(Long playerId) {
         this.playerId = playerId;
     }
-
-    public Instant getAddedAt() {
-        return addedAt;
-    }
-
 
 }
