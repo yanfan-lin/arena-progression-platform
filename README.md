@@ -92,8 +92,9 @@ Copy-Item .env.example .env
 cp .env.example .env
 ```
 
-The default application settings match the MySQL credentials in `.env`. If you change them, configure
-`progression-platform` with the same values.
+Before starting MySQL for the first time, replace `MYSQL_PASSWORD` and `MYSQL_ROOT_PASSWORD` in `.env`.
+
+Use the same `MYSQL_PASSWORD` when starting `progression-platform` in step 5.
 
 ### 3. Start MySQL, Kafka, and Redis
 
@@ -123,9 +124,19 @@ docker compose ps
 
 ### 5. Start the progression platform
 
-Open a new terminal:
+Open a new terminal and replace `your-password` with `MYSQL_PASSWORD` from `.env`.
+
+**Windows PowerShell**
+
+```powershell
+$env:MYSQL_PASSWORD = "your-password"
+java -jar progression-platform/target/progression-platform-0.0.1-SNAPSHOT.jar
+```
+
+**macOS/Linux**
 
 ```bash
+export MYSQL_PASSWORD="your-password"
 java -jar progression-platform/target/progression-platform-0.0.1-SNAPSHOT.jar
 ```
 
@@ -172,6 +183,16 @@ Start the optional Kafka and Redis dashboards with:
 docker compose --profile tools up -d
 ```
 
+Connect to MySQL at `localhost:3306/arena` using `MYSQL_USER` and `MYSQL_PASSWORD` from `.env`.
+
+For example, open the database from the terminal:
+
+```bash
+docker exec -it arena-mysql mysql -u arena -p arena
+```
+
+Enter `MYSQL_PASSWORD` from `.env` when prompted.
+
 ## Simulation Walkthrough
 
 ### 1. Set up teams
@@ -187,7 +208,7 @@ Use `Content-Type: application/json` with this body:
 ```json
 {
   "mode": "THREE_VS_THREE",
-  "targetTeamCount": 30
+  "targetTeamCount": 50
 }
 ```
 
@@ -206,12 +227,14 @@ Use this JSON body:
 ```json
 {
   "mode": "THREE_VS_THREE",
-  "intervalMs": 1000,
-  "maxMatches": 30
+  "intervalMs": 200,
+  "maxMatches": 500
 }
 ```
 
-The simulator returns `202 Accepted` and begins publishing one match approximately every second.
+The simulator returns `202 Accepted` and begins publishing one match every 200 milliseconds.
+
+> **Note:** The run takes roughly 2 minutes. Keep the leaderboard open to watch the rankings update every two seconds.
 
 ### 3. Check the run
 
