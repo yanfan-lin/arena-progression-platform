@@ -232,7 +232,7 @@ Use this JSON body:
 }
 ```
 
-The simulator returns `202 Accepted` and begins publishing one match every 200 milliseconds.
+The simulator returns `202 Accepted` and waits 200 milliseconds between match attempts.
 
 > **Note:** The run takes roughly 2 minutes. Keep the leaderboard open to watch the rankings update every two seconds.
 
